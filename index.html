@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>壁纸网格展示</title>
+  <meta name="theme-color" content="#0b74ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+</head>
+<body>
+  <header class="app-header">
+    <h1>壁纸库</h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="filters" id="filters"></div>
+      <button id="installBtn" class="button" style="display:none">添加到主屏幕</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="pullToRefresh" class="pull-area">下拉刷新</div>
+    <section id="grid" class="grid" aria-live="polite"></section>
+  </main>
+
+  <template id="tile-template">
+    <article class="tile">
+      <img alt="壁纸" class="tile-img" loading="lazy">
+      <div class="tile-meta">
+        <div class="title"></div>
+        <div class="category"></div>
+        <div style="display:flex;gap:6px;">
+          <button class="edit-btn button">编辑</button>
+          <button class="save-btn button">保存</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <!-- Image Editor Modal -->
+  <div id="editorModal" class="editor-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1000;">
+    <div class="editor-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);"></div>
+    <div class="editor-panel" style="position:relative;margin:40px auto;max-width:1000px;background:#fff;border-radius:8px;padding:12px;z-index:1;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:600">图片编辑器</div>
+        <div>
+          <button id="editorClose" class="button">关闭</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div id="editorContainer" style="flex:1;min-width:300px;max-height:70vh;overflow:auto;border:1px solid #eee;padding:6px;background:#111;"></div>
+        <div style="width:320px;max-height:70vh;overflow:auto;">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <label>预设滤镜
+              <select id="presetFilter">
+                <option value="none">none</option>
+                <option value="grayscale">grayscale</option>
+                <option value="vintage">vintage</option>
+                <option value="vivid">vivid</option>
+                <option value="noir">noir</option>
+                <option value="invert">invert</option>
+              </select>
+            </label>
+            <label>亮度 <input id="slider-brightness" type="range" min="0" max="2" step="0.01" value="1"></label>
+            <label>对比度 <input id="slider-contrast" type="range" min="0" max="2" step="0.01" value="1"></label>
+            <label>饱和度 <input id="slider-saturate" type="range" min="0" max="3" step="0.01" value="1"></label>
+            <label>模糊 <input id="slider-blur" type="range" min="0" max="20" step="0.5" value="0"></label>
+            <label>色相 <input id="slider-hue" type="range" min="-180" max="180" step="1" value="0"></label>
+            <label>灰度 <input id="slider-grayscale" type="range" min="0" max="1" step="0.01" value="0"></label>
+            <label>怀旧(sepia) <input id="slider-sepia" type="range" min="0" max="1" step="0.01" value="0"></label>
+            <label>反色 <input id="slider-invert" type="range" min="0" max="1" step="0.01" value="0"></label>
+
+            <div style="border-top:1px solid #eee;padding-top:8px;">
+              <div style="font-weight:600">添加文字</div>
+              <input id="editorText" placeholder="输入文字..." />
+              <button id="addTextBtn" class="button">添加文字</button>
+            </div>
+
+            <div style="border-top:1px solid #eee;padding-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button id="editorSaveBtn" class="button">保存到本地</button>
+              <button id="editorExportBtn" class="button">导出</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Image Preview Modal -->
+  <div id="previewModal" class="preview-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1100;">
+    <div class="preview-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.75);"></div>
+    <div class="preview-panel" style="position:relative;margin:40px auto;max-width:90%;max-height:90%;display:flex;align-items:center;justify-content:center;z-index:1;">
+      <button id="previewClose" class="button" style="position:absolute;right:8px;top:8px;z-index:2;">关闭</button>
+      <img id="previewImage" src="" alt="预览" style="max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,0.5);" />
+    </div>
+  </div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

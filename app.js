@@ -1,0 +1,568 @@
+const demoData = (()=>{
+  const cats = ['风景','城市','动物','插画','极简']
+  const arr = []
+  for(let i=1;i<=30;i++){
+    const c = cats[i % cats.length]
+    // Use picsum for demo images
+    arr.push({
+      id: i,
+      title: `壁纸 #${i}`,
+      category: c,
+      url: `https://picsum.photos/seed/wallpaper-${i}/600/400`
+    })
+  }
+  return arr
+})()
+
+const state = {
+  items: demoData,
+  filter: '全部'
+}
+
+import ImageEditor from './image-editor.js'
+
+const grid = document.getElementById('grid')
+const filtersEl = document.getElementById('filters')
+const template = document.getElementById('tile-template')
+const installBtn = document.getElementById('installBtn')
+
+// Editor modal elements
+const editorModal = document.getElementById('editorModal')
+const editorContainer = document.getElementById('editorContainer')
+const editorClose = document.getElementById('editorClose')
+const presetFilter = document.getElementById('presetFilter')
+const sliders = {
+  brightness: document.getElementById('slider-brightness'),
+  contrast: document.getElementById('slider-contrast'),
+  saturate: document.getElementById('slider-saturate'),
+  blur: document.getElementById('slider-blur'),
+  hue: document.getElementById('slider-hue'),
+  grayscale: document.getElementById('slider-grayscale'),
+  sepia: document.getElementById('slider-sepia'),
+  invert: document.getElementById('slider-invert')
+}
+const editorText = document.getElementById('editorText')
+const addTextBtn = document.getElementById('addTextBtn')
+const editorSaveBtn = document.getElementById('editorSaveBtn')
+const editorExportBtn = document.getElementById('editorExportBtn')
+
+let currentEditor = null
+let currentItem = null
+
+function renderFilters(){
+  const cats = Array.from(new Set(['全部', ...state.items.map(i=>i.category)]))
+  filtersEl.innerHTML = ''
+  cats.forEach(cat=>{
+    const btn = document.createElement('button')
+    btn.className = 'button'
+    btn.textContent = cat
+    if(cat === state.filter) btn.classList.add('active')
+    btn.addEventListener('click', ()=>{
+      state.filter = cat
+      renderFilters()
+      renderGrid()
+    })
+    filtersEl.appendChild(btn)
+  })
+}
+
+function clearGrid(){
+  grid.innerHTML = ''
+}
+
+// IntersectionObserver based lazy loading for additional safety (plus loading=lazy attr)
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){
+      const img = en.target
+      const src = img.dataset.src
+      if(src){
+        img.src = src
+        img.removeAttribute('data-src')
+      }
+      io.unobserve(img)
+    }
+  })
+},{rootMargin:'120px'})
+
+// Preview modal elements
+const previewModal = document.getElementById('previewModal')
+const previewImage = document.getElementById('previewImage')
+const previewClose = document.getElementById('previewClose')
+const previewBackdrop = previewModal && previewModal.querySelector('.preview-backdrop')
+
+function showPreview(url, title){
+  if(!previewModal || !previewImage) return
+  previewImage.src = url
+  previewImage.alt = title || '预览'
+  previewModal.style.display = 'block'
+  previewModal.setAttribute('aria-hidden','false')
+}
+
+function hidePreview(){
+  if(!previewModal) return
+  previewModal.style.display = 'none'
+  previewModal.setAttribute('aria-hidden','true')
+  if(previewImage) previewImage.src = ''
+}
+
+if(previewClose) previewClose.addEventListener('click', hidePreview)
+if(previewBackdrop) previewBackdrop.addEventListener('click', hidePreview)
+
+function renderGrid(){
+  clearGrid()
+  const items = state.filter === '全部' ? state.items : state.items.filter(i=>i.category===state.filter)
+  if(items.length === 0){
+    const el = document.createElement('div')
+    el.className = 'loading'
+    el.textContent = '无可显示的壁纸'
+    grid.appendChild(el)
+    return
+  }
+
+  items.forEach(item=>{
+    const node = template.content.cloneNode(true)
+    const tile = node.querySelector('.tile')
+    const img = node.querySelector('.tile-img')
+    node.querySelector('.title').textContent = item.title
+    node.querySelector('.category').textContent = item.category
+    const saveBtn = node.querySelector('.save-btn')
+    saveBtn.addEventListener('click', ()=>saveImage(item))
+    const editBtn = node.querySelector('.edit-btn')
+    if(editBtn) editBtn.addEventListener('click', ()=>openEditor(item))
+
+    // Use data-src + loading=lazy attribute to defer load; IntersectionObserver will set src
+    img.dataset.src = item.url
+    img.alt = item.title
+    img.loading = 'lazy'
+    img.addEventListener('error', ()=>{img.style.background = '#f2f2f2'})
+    // click to preview
+    img.addEventListener('click', ()=> showPreview(item.url, item.title))
+
+    grid.appendChild(node)
+    // Observe last appended image
+    const appendedImg = grid.lastElementChild.querySelector('.tile-img')
+    if(appendedImg) io.observe(appendedImg)
+  })
+}
+
+// ----------------- Image Editor integration -----------------
+editorClose && editorClose.addEventListener('click', closeEditor)
+const backdrop = editorModal && editorModal.querySelector('.editor-backdrop')
+if(backdrop) backdrop.addEventListener('click', closeEditor)
+
+function showEditorModal(){
+  if(!editorModal) return
+  editorModal.style.display = 'block'
+  editorModal.setAttribute('aria-hidden', 'false')
+}
+
+function hideEditorModal(){
+  if(!editorModal) return
+  editorModal.style.display = 'none'
+  editorModal.setAttribute('aria-hidden', 'true')
+}
+
+async function openEditor(item){
+  currentItem = item
+  showEditorModal()
+  // clear previous
+  if(editorContainer) editorContainer.innerHTML = ''
+  try{
+    currentEditor = new ImageEditor()
+    await currentEditor.load(item.url)
+    // expose to window for debugging in DevTools Console
+    try{ window.currentEditor = currentEditor }catch(e){}
+    // attach canvas
+    if(editorContainer) editorContainer.appendChild(currentEditor.getElement())
+    // sync controls
+    syncControlsFromEditor()
+    // wire controls
+    Object.keys(sliders).forEach(name=>{
+      const el = sliders[name]
+      if(!el) return
+      el.oninput = ()=>{
+        const val = parseFloat(el.value)
+        currentEditor.adjustImage(name, val)
+        try{ if(typeof updateUndoRedoState === 'function') updateUndoRedoState() }catch(e){}
+      }
+    })
+    if(presetFilter) presetFilter.onchange = ()=>{
+      try{ currentEditor.applyFilter(presetFilter.value) }catch(e){}
+      syncControlsFromEditor()
+      try{ if(typeof updateUndoRedoState === 'function') updateUndoRedoState() }catch(e){}
+    }
+    if(addTextBtn) addTextBtn.onclick = ()=>{
+      const txt = editorText && editorText.value
+      if(!txt) return
+      const x = 20
+      const y = (currentEditor.canvas && currentEditor.canvas.height) ? currentEditor.canvas.height - 60 : 20
+      currentEditor.addText(txt, { x, y, fontSize: 28, color: '#fff', stroke: { width: 3, color: 'rgba(0,0,0,0.6)' } })
+      try{ if(typeof updateUndoRedoState === 'function') updateUndoRedoState() }catch(e){}
+    }
+    if(editorSaveBtn) editorSaveBtn.onclick = ()=>{
+      const fname = `${item.title.replace(/[^a-z0-9-_]/ig,'') || 'image'}-edited.png`
+      currentEditor.saveToLocal(fname).catch(()=>alert('保存失败'))
+    }
+    if(editorExportBtn) editorExportBtn.onclick = async ()=>{
+      try{
+        const blob = await currentEditor.exportImage('image/png', 0.92)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${item.title}-export.png`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+      }catch(e){console.error(e)}
+    }
+    // Add undo/redo buttons (create controls container if missing)
+    let controlsEl = editorModal.querySelector('.editor-controls')
+    if(!controlsEl){
+      controlsEl = document.createElement('div')
+      controlsEl.className = 'editor-controls'
+      // Prefer inserting controls into the right-side controls column of the editor panel
+      const rightCol = editorModal.querySelector('.editor-panel > div:nth-child(2) > div:nth-child(2)')
+      if(rightCol) rightCol.insertBefore(controlsEl, rightCol.firstChild)
+      else if(editorContainer && editorContainer.parentNode) editorContainer.parentNode.insertBefore(controlsEl, editorContainer)
+      else if(editorModal) editorModal.appendChild(controlsEl)
+      // basic inline styles so controls are visible
+      controlsEl.style.display = 'flex'
+      controlsEl.style.gap = '8px'
+      controlsEl.style.marginBottom = '8px'
+    }
+
+    // avoid duplicate buttons
+    let undoBtn = controlsEl.querySelector('#undoBtn')
+    let redoBtn = controlsEl.querySelector('#redoBtn')
+    if(!undoBtn){
+      undoBtn = document.createElement('button')
+      undoBtn.id = 'undoBtn'
+      undoBtn.className = 'button'
+      undoBtn.textContent = '撤回'
+      controlsEl.appendChild(undoBtn)
+    }
+    if(!redoBtn){
+      redoBtn = document.createElement('button')
+      redoBtn.id = 'redoBtn'
+      redoBtn.className = 'button'
+      redoBtn.textContent = '重做'
+      controlsEl.appendChild(redoBtn)
+    }
+
+    // Text editing controls
+    let fontSelect = controlsEl.querySelector('#textFont')
+    let boldCheckbox = controlsEl.querySelector('#textBold')
+    let colorInput = controlsEl.querySelector('#textColor')
+    let sizeInput = controlsEl.querySelector('#textSize')
+    let deleteTextBtn = controlsEl.querySelector('#deleteTextBtn')
+    if(!fontSelect){
+      fontSelect = document.createElement('select')
+      fontSelect.id = 'textFont';
+      ['sans-serif','serif','monospace','Georgia','Arial'].forEach(f=>{
+        const o = document.createElement('option')
+        o.value = f
+        o.textContent = f
+        fontSelect.appendChild(o)
+      })
+      controlsEl.appendChild(fontSelect)
+    }
+    if(!boldCheckbox){
+      boldCheckbox = document.createElement('input')
+      boldCheckbox.type = 'checkbox'
+      boldCheckbox.id = 'textBold'
+      const lbl = document.createElement('label')
+      lbl.style.display = 'inline-flex'
+      lbl.style.alignItems = 'center'
+      lbl.style.gap = '6px'
+      lbl.appendChild(boldCheckbox)
+      lbl.appendChild(document.createTextNode('加粗'))
+      controlsEl.appendChild(lbl)
+    }
+    if(!colorInput){
+      colorInput = document.createElement('input')
+      colorInput.type = 'color'
+      colorInput.id = 'textColor'
+      colorInput.value = '#ffffff'
+      controlsEl.appendChild(colorInput)
+    }
+    if(!sizeInput){
+      sizeInput = document.createElement('input')
+      sizeInput.type = 'number'
+      sizeInput.id = 'textSize'
+      sizeInput.min = 8
+      sizeInput.max = 200
+      sizeInput.value = 28
+      sizeInput.style.width = '64px'
+      controlsEl.appendChild(sizeInput)
+    }
+    if(!deleteTextBtn){
+      deleteTextBtn = document.createElement('button')
+      deleteTextBtn.id = 'deleteTextBtn'
+      deleteTextBtn.className = 'button'
+      deleteTextBtn.textContent = '删除文字'
+      controlsEl.appendChild(deleteTextBtn)
+    }
+
+    // update controls when selection changes
+    if(currentEditor) currentEditor.onSelectionChange = (idx, layer)=>{
+      if(!layer){
+        fontSelect.value = 'sans-serif'
+        boldCheckbox.checked = false
+        colorInput.value = '#ffffff'
+        sizeInput.value = 28
+        deleteTextBtn.disabled = true
+      } else {
+        fontSelect.value = layer.font || 'sans-serif'
+        boldCheckbox.checked = (layer.fontWeight === 'bold')
+        // normalize color hex
+        try{ colorInput.value = layer.color || '#ffffff' }catch(e){}
+        sizeInput.value = layer.fontSize || 28
+        deleteTextBtn.disabled = false
+      }
+    }
+
+    // wire text control events
+    fontSelect.onchange = ()=>{
+      const idx = currentEditor && currentEditor._selectedTextIndex
+      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { font: fontSelect.value }) }
+    }
+    boldCheckbox.onchange = ()=>{
+      const idx = currentEditor && currentEditor._selectedTextIndex
+      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { fontWeight: boldCheckbox.checked ? 'bold' : '' }) }
+    }
+    colorInput.onchange = ()=>{
+      const idx = currentEditor && currentEditor._selectedTextIndex
+      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { color: colorInput.value }) }
+    }
+    sizeInput.onchange = ()=>{
+      const idx = currentEditor && currentEditor._selectedTextIndex
+      const v = parseInt(sizeInput.value) || 28
+      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { fontSize: v }) }
+    }
+    deleteTextBtn.onclick = ()=>{
+      const idx = currentEditor && currentEditor._selectedTextIndex
+      if(currentEditor && idx >= 0){ currentEditor.deleteText(idx); syncControlsFromEditor() }
+    }
+
+    const updateUndoRedoState = ()=>{
+      try{
+        undoBtn.disabled = !(currentEditor && currentEditor.canUndo)
+        redoBtn.disabled = !(currentEditor && currentEditor.canRedo)
+      }catch(e){}
+    }
+
+    undoBtn.onclick = ()=>{ if(currentEditor){ currentEditor.undo(); syncControlsFromEditor(); updateUndoRedoState() } }
+    redoBtn.onclick = ()=>{ if(currentEditor){ currentEditor.redo(); syncControlsFromEditor(); updateUndoRedoState() } }
+    // initialize state
+    updateUndoRedoState()
+
+    // keyboard shortcuts (Ctrl/Cmd+Z, Ctrl/Cmd+Y)
+    window._editorKeyHandler = (ev)=>{
+      if(!editorModal || editorModal.style.display === 'none') return
+      const meta = ev.ctrlKey || ev.metaKey
+      if(!meta) return
+      // Z = undo, Y = redo (Shift+Z -> redo on some platforms)
+      if(ev.key === 'z' || ev.key === 'Z'){
+        ev.preventDefault()
+        if(ev.shift){ if(currentEditor && currentEditor.redo){ currentEditor.redo(); syncControlsFromEditor(); updateUndoRedoState() } }
+        else { if(currentEditor && currentEditor.undo){ currentEditor.undo(); syncControlsFromEditor(); updateUndoRedoState() } }
+      } else if(ev.key === 'y' || ev.key === 'Y'){
+        ev.preventDefault()
+        if(currentEditor && currentEditor.redo){ currentEditor.redo(); syncControlsFromEditor(); updateUndoRedoState() }
+      }
+    }
+    window.addEventListener('keydown', window._editorKeyHandler)
+  }catch(err){
+    console.error('加载图片到编辑器失败', err)
+    alert('无法加载图片到编辑器')
+    closeEditor()
+  }
+}
+
+function closeEditor(){
+  hideEditorModal()
+  if(editorContainer) editorContainer.innerHTML = ''
+  // remove keyboard handler if set
+  try{ if(window._editorKeyHandler) window.removeEventListener('keydown', window._editorKeyHandler) }catch(e){}
+  window._editorKeyHandler = null
+  try{ window.currentEditor = null }catch(e){}
+  currentEditor = null
+  currentItem = null
+}
+
+function syncControlsFromEditor(){
+  if(!currentEditor) return
+  const f = currentEditor.filters || {}
+  Object.keys(sliders).forEach(name=>{
+    const el = sliders[name]
+    if(!el) return
+    if(typeof f[name] !== 'undefined') el.value = f[name]
+  })
+  // sync text controls if available
+  try{
+    const idx = currentEditor._selectedTextIndex
+    const fontSelect = document.getElementById('textFont')
+    const boldCheckbox = document.getElementById('textBold')
+    const colorInput = document.getElementById('textColor')
+    const sizeInput = document.getElementById('textSize')
+    const deleteTextBtn = document.getElementById('deleteTextBtn')
+    if(idx >= 0 && currentEditor.textLayers && currentEditor.textLayers[idx]){
+      const layer = currentEditor.textLayers[idx]
+      if(fontSelect) fontSelect.value = layer.font || 'sans-serif'
+      if(boldCheckbox) boldCheckbox.checked = (layer.fontWeight === 'bold')
+      if(colorInput) try{ colorInput.value = layer.color || '#ffffff' }catch(e){}
+      if(sizeInput) sizeInput.value = layer.fontSize || 28
+      if(deleteTextBtn) deleteTextBtn.disabled = false
+    }else{
+      if(deleteTextBtn) deleteTextBtn.disabled = true
+    }
+  }catch(e){}
+}
+
+// Simple pull-to-refresh implementation (works on touch devices)
+let startY = 0
+let pulling = false
+const pullEl = document.getElementById('pullToRefresh')
+
+function setPullHeight(h){
+  pullEl.style.height = h + 'px'
+}
+
+function refreshAction(){
+  // simulate refresh: shuffle items and re-render
+  state.items = state.items.sort(()=>Math.random()-0.5)
+  renderGrid()
+}
+
+window.addEventListener('touchstart', (e)=>{
+  if(window.scrollY === 0){
+    startY = e.touches[0].clientY
+    pulling = true
+  }
+})
+
+window.addEventListener('touchmove', (e)=>{
+  if(!pulling) return
+  const delta = e.touches[0].clientY - startY
+  if(delta > 0){
+    setPullHeight(Math.min(delta,120))
+  } else {
+    setPullHeight(0)
+  }
+})
+
+window.addEventListener('touchend', (e)=>{
+  if(!pulling) return
+  const endY = e.changedTouches[0].clientY
+  const delta = endY - startY
+  setPullHeight(0)
+  pulling = false
+  if(delta > 80){
+    // show temporary loading
+    pullEl.textContent = '刷新中…'
+    pullEl.style.height = '40px'
+    setTimeout(()=>{
+      refreshAction()
+      pullEl.style.height = '0'
+      pullEl.textContent = '下拉刷新'
+    }, 800)
+  }
+})
+
+// Optional mouse-based pull-to-refresh for desktop testing
+let mouseDown = false
+window.addEventListener('mousedown', (e)=>{if(window.scrollY===0){mouseDown=true;startY=e.clientY}})
+window.addEventListener('mousemove', (e)=>{
+  if(!mouseDown) return
+  const delta = e.clientY - startY
+  if(delta>0) setPullHeight(Math.min(delta,120))
+})
+window.addEventListener('mouseup', (e)=>{
+  if(!mouseDown) return
+  mouseDown=false
+  const delta = e.clientY - startY
+  setPullHeight(0)
+  if(delta>80){
+    pullEl.textContent = '刷新中…'
+    pullEl.style.height = '40px'
+    setTimeout(()=>{
+      refreshAction()
+      pullEl.style.height = '0'
+      pullEl.textContent = '下拉刷新'
+    },800)
+  }
+})
+
+// initial render
+renderFilters()
+renderGrid()
+
+// --- PWA: service worker registration ---
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('service-worker.js').catch(()=>{})
+}
+
+// --- Add-to-home-screen prompt handling ---
+let deferredPrompt = null
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault()
+  deferredPrompt = e
+  installBtn.classList.add('show')
+})
+installBtn.addEventListener('click', async ()=>{
+  if(!deferredPrompt) return
+  deferredPrompt.prompt()
+  const choice = await deferredPrompt.userChoice.catch(()=>null)
+  deferredPrompt = null
+  installBtn.classList.remove('show')
+})
+
+// --- Save image to device (best-effort) ---
+async function saveImage(item){
+  try{
+    const resp = await fetch(item.url)
+    const blob = await resp.blob()
+    const file = new File([blob], `${item.title}.jpg`, {type: blob.type})
+
+    // Prefer Web Share API with files (lets user save to Photos on iOS via share sheet)
+    if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      await navigator.share({files:[file], title: item.title})
+      return
+    }
+
+    // Fallback: anchor download (works on many platforms but not iOS Photos)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${item.title}.jpg`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }catch(err){
+    // On iOS Safari, best action is to instruct user to long-press the image
+    alert('无法直接保存，请长按图片并选择“添加到照片”或使用分享功能。')
+  }
+}
+
+// --- Background Sync helper: queue a request and register sync ---
+async function queueForBackgroundSync(request){
+  if(!('serviceWorker' in navigator)) return
+  const reg = await navigator.serviceWorker.ready
+  // send message to service worker to store the request
+  const message = { action: 'queue-request', request }
+  try{
+    if(reg.active) reg.active.postMessage(message)
+    else if(navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage(message)
+  }catch(e){}
+
+  // register sync
+  try{
+    if('sync' in reg) await reg.sync.register('sync-requests')
+  }catch(e){}
+}
+
+// Example: when offline and user taps "保存" we could enqueue a sync
+// queueForBackgroundSync({ url: '/api/sync-favorite', method: 'POST', headers: { 'Content-Type': 'application/json' }, body: { id: 123 } })

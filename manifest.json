@@ -1,0 +1,25 @@
+{
+  "name": "壁纸库",
+  "short_name": "壁纸",
+  "description": "漂亮的壁纸浏览器与离线支持",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b74ff",
+  "icons": [
+    { "src": "icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon.svg",    "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "最新壁纸", "short_name": "最新", "url": "/?tab=new" },
+    { "name": "我的收藏", "short_name": "收藏", "url": "/?tab=favs" }
+  ]
+}
