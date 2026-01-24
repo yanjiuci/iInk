@@ -49,6 +49,17 @@ main{padding:12px}
 #uploadGallery img{border-radius:6px}
 #uploadGallery .button{font-size:12px;padding:4px 6px}
 
+/* Like / Comment buttons */
+.like-btn{background:transparent;border-color:transparent;color:#e74c3c}
+.like-btn.active{background:linear-gradient(#ffeef0,#ffdfe5);color:#c0392b}
+.comment-btn{background:transparent}
+
+/* Comment modal */
+.comment-modal{display:none}
+.comment-panel{background:var(--card)}
+.comment-panel input{outline:none}
+.comment-count{display:inline-block;margin-left:4px}
+
 /* Small helpers for PWA install CTA */
 #installBtn{background:#fff;border-color:#e6eefc}
 #installBtn.show{display:inline-block}

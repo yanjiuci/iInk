@@ -33,6 +33,13 @@ const userClose = document.getElementById('userClose')
 const uploadInput = document.getElementById('uploadInput')
 const uploadGallery = document.getElementById('uploadGallery')
 
+// comment modal elements
+const commentModal = document.getElementById('commentModal')
+const commentClose = document.getElementById('commentClose')
+const commentList = document.getElementById('commentList')
+const commentInput = document.getElementById('commentInput')
+const commentAddBtn = document.getElementById('commentAddBtn')
+
 // Editor modal elements
 const editorModal = document.getElementById('editorModal')
 const editorContainer = document.getElementById('editorContainer')
@@ -59,6 +66,103 @@ let currentItem = null
 // Local persistence for user uploads
 const userStore = new LocalStorageManager('user')
 const USER_UPLOADS_KEY = 'uploads'
+// interactions store (likes & comments)
+const interactionStore = new LocalStorageManager('interaction')
+const INTERACTIONS_KEY = 'interactions'
+let interactions = interactionStore.get(INTERACTIONS_KEY, {}) || {}
+
+function saveInteractions(){ interactionStore.set(INTERACTIONS_KEY, interactions) }
+
+function getInteraction(id){ return interactions[String(id)] || { liked: false, likes: 0, comments: [] } }
+
+function toggleLikeById(id){
+  const key = String(id)
+  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[] }
+  interactions[key].liked = !interactions[key].liked
+  if(interactions[key].liked) interactions[key].likes = (interactions[key].likes||0) + 1
+  else interactions[key].likes = Math.max(0, (interactions[key].likes||0) - 1)
+  saveInteractions()
+  return interactions[key]
+}
+
+function addCommentToId(id, text){
+  const key = String(id)
+  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[] }
+  const c = { id: `c-${Date.now()}-${Math.floor(Math.random()*1000)}`, text, date: Date.now() }
+  interactions[key].comments.push(c)
+  saveInteractions()
+  return c
+}
+
+function deleteCommentFromId(id, commentId){
+  const key = String(id)
+  if(!interactions[key] || !interactions[key].comments) return false
+  interactions[key].comments = interactions[key].comments.filter(c=>c.id !== commentId)
+  saveInteractions()
+  return true
+}
+
+let _commentTargetId = null
+
+function openCommentModalFor(item){
+  if(!commentModal) return
+  _commentTargetId = String(item.id)
+  renderCommentList()
+  commentModal.style.display = 'block'
+  commentModal.setAttribute('aria-hidden','false')
+}
+
+function closeCommentModal(){
+  if(!commentModal) return
+  commentModal.style.display = 'none'
+  commentModal.setAttribute('aria-hidden','true')
+  _commentTargetId = null
+  if(commentInput) commentInput.value = ''
+}
+
+function renderCommentList(){
+  if(!commentList) return
+  commentList.innerHTML = ''
+  if(!_commentTargetId) return
+  const data = getInteraction(_commentTargetId)
+  const arr = data.comments || []
+  if(arr.length === 0){ commentList.textContent = '暂无评论' ; return }
+  arr.slice().reverse().forEach(c=>{
+    const el = document.createElement('div')
+    el.style.display = 'flex'
+    el.style.justifyContent = 'space-between'
+    el.style.alignItems = 'flex-start'
+    el.style.padding = '8px'
+    el.style.borderBottom = '1px solid #eee'
+
+    const body = document.createElement('div')
+    const t = document.createElement('div')
+    t.textContent = c.text
+    t.style.marginBottom = '6px'
+    const meta = document.createElement('div')
+    meta.style.fontSize = '12px'
+    meta.style.color = '#888'
+    meta.textContent = new Date(c.date).toLocaleString()
+    body.appendChild(t)
+    body.appendChild(meta)
+
+    const ctrl = document.createElement('div')
+    const delBtn = document.createElement('button')
+    delBtn.className = 'button'
+    delBtn.style.fontSize = '12px'
+    delBtn.textContent = '删除'
+    delBtn.addEventListener('click', ()=>{
+      deleteCommentFromId(_commentTargetId, c.id)
+      renderCommentList()
+      renderGrid()
+    })
+    ctrl.appendChild(delBtn)
+
+    el.appendChild(body)
+    el.appendChild(ctrl)
+    commentList.appendChild(el)
+  })
+}
 
 function blobToDataURL(blob){
   return new Promise((res, rej)=>{
@@ -218,6 +322,24 @@ function renderGrid(){
     const editBtn = node.querySelector('.edit-btn')
     if(editBtn) editBtn.addEventListener('click', ()=>openEditor(item))
 
+    // like/comment UI
+    const likeBtn = node.querySelector('.like-btn')
+    const likeCount = node.querySelector('.like-count')
+    const commentCount = node.querySelector('.comment-count')
+    const commentBtn = node.querySelector('.comment-btn')
+    try{
+      const info = getInteraction(item.id)
+      if(likeCount) likeCount.textContent = info.likes || 0
+      if(commentCount) commentCount.textContent = (info.comments && info.comments.length) || 0
+      if(likeBtn) { if(info.liked) likeBtn.classList.add('active') }
+      if(likeBtn) likeBtn.addEventListener('click', ()=>{
+        const res = toggleLikeById(item.id)
+        if(likeCount) likeCount.textContent = res.likes
+        if(likeBtn) { if(res.liked) likeBtn.classList.add('active'); else likeBtn.classList.remove('active') }
+      })
+      if(commentBtn) commentBtn.addEventListener('click', ()=> openCommentModalFor(item))
+    }catch(e){}
+
     // Use data-src + loading=lazy attribute to defer load; IntersectionObserver will set src
     img.dataset.src = item.url
     img.alt = item.title
@@ -262,6 +384,18 @@ if(uploadInput) uploadInput.addEventListener('change', async (ev)=>{
   renderUploadGallery()
   // clear input
   uploadInput.value = ''
+})
+
+// comment modal wiring
+if(commentClose) commentClose.addEventListener('click', ()=> closeCommentModal())
+const commentBackdrop = commentModal && commentModal.querySelector('.comment-backdrop')
+if(commentBackdrop) commentBackdrop.addEventListener('click', ()=> closeCommentModal())
+if(commentAddBtn) commentAddBtn.addEventListener('click', ()=>{
+  const txt = commentInput && commentInput.value && commentInput.value.trim()
+  if(!txt || !_commentTargetId) return
+  addCommentToId(_commentTargetId, txt)
+  commentInput.value = ''
+  renderCommentList()
 })
 
 // ----------------- Image Editor integration -----------------
