@@ -43,6 +43,12 @@ main{padding:12px}
 .preview-panel{background:transparent}
 .preview-backdrop{cursor:pointer}
 
+/* User modal / gallery */
+.user-modal{display:none}
+.user-panel{background:var(--card)}
+#uploadGallery img{border-radius:6px}
+#uploadGallery .button{font-size:12px;padding:4px 6px}
+
 /* Small helpers for PWA install CTA */
 #installBtn{background:#fff;border-color:#e6eefc}
 #installBtn.show{display:inline-block}

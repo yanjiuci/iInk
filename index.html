@@ -17,6 +17,7 @@
     <div style="display:flex;gap:8px;align-items:center">
       <div class="filters" id="filters"></div>
       <button id="installBtn" class="button" style="display:none">添加到主屏幕</button>
+      <button id="userBtn" class="button">个人中心</button>
     </div>
   </header>
 
@@ -93,6 +94,38 @@
     <div class="preview-panel" style="position:relative;margin:40px auto;max-width:90%;max-height:90%;display:flex;align-items:center;justify-content:center;z-index:1;">
       <button id="previewClose" class="button" style="position:absolute;right:8px;top:8px;z-index:2;">关闭</button>
       <img id="previewImage" src="" alt="预览" style="max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,0.5);" />
+    </div>
+  </div>
+
+  <!-- User Profile / Upload Modal -->
+  <div id="userModal" class="user-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1200;">
+    <div class="user-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);"></div>
+    <div class="user-panel" style="position:relative;margin:40px auto;max-width:900px;background:#fff;border-radius:8px;padding:12px;z-index:1;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:600">个人中心</div>
+        <div>
+          <button id="userClose" class="button">关闭</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="flex:1;min-width:300px;max-height:60vh;overflow:auto;border:1px solid #eee;padding:12px;">
+          <div style="margin-bottom:8px;">
+            <label style="display:block;font-weight:600;margin-bottom:6px;">上传图片</label>
+            <input id="uploadInput" type="file" accept="image/*" multiple />
+            <div style="margin-top:8px;color:#666;font-size:13px">支持多图上传，会压缩并存入本地（仅用于演示）。</div>
+          </div>
+          <div>
+            <div style="font-weight:600;margin-bottom:6px;">我的上传</div>
+            <div id="uploadGallery" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+          </div>
+        </div>
+        <div style="width:320px;max-height:60vh;overflow:auto;">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-weight:600">说明</div>
+            <div style="color:#666;font-size:13px">上传的图片会添加到壁纸库顶部，并保存在本地存储用于页面刷新时恢复。若需长期存储请接入服务器或 IndexedDB。</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="app.js" type="module"></script>

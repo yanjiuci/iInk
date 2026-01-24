@@ -20,11 +20,18 @@ const state = {
 }
 
 import ImageEditor from './image-editor.js'
+import { compressImage, LocalStorageManager } from './utils.js'
 
 const grid = document.getElementById('grid')
 const filtersEl = document.getElementById('filters')
 const template = document.getElementById('tile-template')
 const installBtn = document.getElementById('installBtn')
+// user profile / upload elements
+const userBtn = document.getElementById('userBtn')
+const userModal = document.getElementById('userModal')
+const userClose = document.getElementById('userClose')
+const uploadInput = document.getElementById('uploadInput')
+const uploadGallery = document.getElementById('uploadGallery')
 
 // Editor modal elements
 const editorModal = document.getElementById('editorModal')
@@ -48,6 +55,86 @@ const editorExportBtn = document.getElementById('editorExportBtn')
 
 let currentEditor = null
 let currentItem = null
+
+// Local persistence for user uploads
+const userStore = new LocalStorageManager('user')
+const USER_UPLOADS_KEY = 'uploads'
+
+function blobToDataURL(blob){
+  return new Promise((res, rej)=>{
+    const fr = new FileReader()
+    fr.onload = ()=>res(fr.result)
+    fr.onerror = rej
+    fr.readAsDataURL(blob)
+  })
+}
+
+async function loadUserUploads(){
+  const uploads = userStore.get(USER_UPLOADS_KEY, []) || []
+  if(!uploads || !uploads.length) return
+  // prepend uploads to state items so they appear first
+  uploads.reverse().forEach(u=>{
+    state.items.unshift({ id: u.id, title: u.title || '上传图片', category: '上传', url: u.dataUrl, uploaded: true })
+  })
+}
+
+function persistUploadRecord(record){
+  const arr = userStore.get(USER_UPLOADS_KEY, []) || []
+  arr.push(record)
+  userStore.set(USER_UPLOADS_KEY, arr)
+}
+
+function removeUploadRecord(id){
+  let arr = userStore.get(USER_UPLOADS_KEY, []) || []
+  arr = arr.filter(a=>a.id !== id)
+  userStore.set(USER_UPLOADS_KEY, arr)
+}
+
+function renderUploadGallery(){
+  if(!uploadGallery) return
+  uploadGallery.innerHTML = ''
+  const uploads = userStore.get(USER_UPLOADS_KEY, []) || []
+  if(uploads.length === 0){
+    uploadGallery.textContent = '暂无上传'
+    return
+  }
+  uploads.slice().reverse().forEach(u=>{
+    const el = document.createElement('div')
+    el.style.display = 'flex'
+    el.style.flexDirection = 'column'
+    el.style.gap = '6px'
+    const img = document.createElement('img')
+    img.src = u.dataUrl
+    img.style.width = '100%'
+    img.style.height = '80px'
+    img.style.objectFit = 'cover'
+    img.alt = u.title || '上传'
+    img.addEventListener('click', ()=>{
+      // insert into main grid view (move to top)
+      state.items.unshift({ id: u.id, title: u.title || '上传图片', category: '上传', url: u.dataUrl, uploaded: true })
+      renderFilters()
+      renderGrid()
+    })
+    const btnRow = document.createElement('div')
+    btnRow.style.display = 'flex'
+    btnRow.style.gap = '6px'
+    const del = document.createElement('button')
+    del.className = 'button'
+    del.textContent = '删除'
+    del.addEventListener('click', ()=>{
+      // remove from storage and from state
+      removeUploadRecord(u.id)
+      state.items = state.items.filter(i=>i.id !== u.id)
+      renderFilters()
+      renderGrid()
+      renderUploadGallery()
+    })
+    btnRow.appendChild(del)
+    el.appendChild(img)
+    el.appendChild(btnRow)
+    uploadGallery.appendChild(el)
+  })
+}
 
 function renderFilters(){
   const cats = Array.from(new Set(['全部', ...state.items.map(i=>i.category)]))
@@ -145,6 +232,37 @@ function renderGrid(){
     if(appendedImg) io.observe(appendedImg)
   })
 }
+
+// --- User modal handlers ---
+function showUserModal(){ if(!userModal) return; userModal.style.display = 'block'; userModal.setAttribute('aria-hidden','false'); renderUploadGallery() }
+function hideUserModal(){ if(!userModal) return; userModal.style.display = 'none'; userModal.setAttribute('aria-hidden','true') }
+
+if(userBtn) userBtn.addEventListener('click', ()=> showUserModal())
+if(userClose) userClose.addEventListener('click', ()=> hideUserModal())
+const userBackdrop = userModal && userModal.querySelector('.user-backdrop')
+if(userBackdrop) userBackdrop.addEventListener('click', ()=> hideUserModal())
+
+if(uploadInput) uploadInput.addEventListener('change', async (ev)=>{
+  const files = Array.from(ev.target.files || [])
+  if(files.length === 0) return
+  for(const f of files){
+    try{
+      // compress then convert to dataURL for storage
+      const compressed = await compressImage(f, { maxWidth: 1200, quality: 0.85 })
+      const dataUrl = await blobToDataURL(compressed)
+      const id = `upload-${Date.now()}-${Math.floor(Math.random()*1000)}`
+      // add to app state and persist
+      const item = { id, title: f.name, category: '上传', url: dataUrl, uploaded: true }
+      state.items.unshift(item)
+      persistUploadRecord({ id, title: f.name, dataUrl, date: Date.now() })
+    }catch(err){ console.error('上传处理失败', err) }
+  }
+  renderFilters()
+  renderGrid()
+  renderUploadGallery()
+  // clear input
+  uploadInput.value = ''
+})
 
 // ----------------- Image Editor integration -----------------
 editorClose && editorClose.addEventListener('click', closeEditor)
@@ -496,8 +614,11 @@ window.addEventListener('mouseup', (e)=>{
 })
 
 // initial render
-renderFilters()
-renderGrid()
+; (async ()=>{
+  await loadUserUploads()
+  renderFilters()
+  renderGrid()
+})()
 
 // --- PWA: service worker registration ---
 if('serviceWorker' in navigator){
