@@ -28,7 +28,9 @@
 
   <template id="tile-template">
     <article class="tile">
-      <img alt="壁纸" class="tile-img" loading="lazy">
+      <div class="tile-media">
+        <img alt="壁纸" class="tile-img" loading="lazy">
+      </div>
       <div class="tile-meta">
         <div class="title"></div>
         <div class="category"></div>
@@ -58,6 +60,13 @@
         <div id="editorContainer" style="flex:1;min-width:300px;max-height:70vh;overflow:auto;border:1px solid #eee;padding:6px;background:#111;"></div>
         <div style="width:320px;max-height:70vh;overflow:auto;">
           <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding-bottom:8px;border-bottom:1px solid #eee;">
+              <div style="font-weight:600">个人信息</div>
+              <img id="userAvatarPreview" src="icons/icon.svg" alt="头像" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:1px solid #eee;" />
+              <input id="userAvatarInput" type="file" accept="image/*" />
+              <label style="width:100%;">昵称 <input id="userNickname" placeholder="输入昵称..." style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;margin-top:6px" /></label>
+              <button id="userSaveProfile" class="button">保存资料</button>
+            </div>
             <label>预设滤镜
               <select id="presetFilter">
                 <option value="none">none</option>

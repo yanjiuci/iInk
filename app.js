@@ -8,7 +8,7 @@ const demoData = (()=>{
       id: i,
       title: `壁纸 #${i}`,
       category: c,
-      url: `https://picsum.photos/seed/wallpaper-${i}/600/400`
+      url: `https://picsum.photos/seed/wallpaper-${i}/600/800`
     })
   }
   return arr
@@ -32,6 +32,10 @@ const userModal = document.getElementById('userModal')
 const userClose = document.getElementById('userClose')
 const uploadInput = document.getElementById('uploadInput')
 const uploadGallery = document.getElementById('uploadGallery')
+const userAvatarPreview = document.getElementById('userAvatarPreview')
+const userAvatarInput = document.getElementById('userAvatarInput')
+const userNickname = document.getElementById('userNickname')
+const userSaveProfile = document.getElementById('userSaveProfile')
 
 // comment modal elements
 const commentModal = document.getElementById('commentModal')
@@ -66,6 +70,7 @@ let currentItem = null
 // Local persistence for user uploads
 const userStore = new LocalStorageManager('user')
 const USER_UPLOADS_KEY = 'uploads'
+const USER_PROFILE_KEY = 'profile'
 // interactions store (likes & comments)
 const interactionStore = new LocalStorageManager('interaction')
 const INTERACTIONS_KEY = 'interactions'
@@ -186,6 +191,52 @@ function persistUploadRecord(record){
   const arr = userStore.get(USER_UPLOADS_KEY, []) || []
   arr.push(record)
   userStore.set(USER_UPLOADS_KEY, arr)
+}
+
+function saveUserProfile(profile){
+  userStore.set(USER_PROFILE_KEY, profile)
+}
+
+function getUserProfile(){
+  return userStore.get(USER_PROFILE_KEY, { nickname: '', avatar: null })
+}
+
+function renderUserProfile(){
+  const p = getUserProfile()
+  if(userNickname) userNickname.value = p.nickname || ''
+  if(userAvatarPreview) userAvatarPreview.src = p.avatar || 'icons/icon.svg'
+  updateUserButton(p)
+}
+
+async function handleAvatarSelected(ev){
+  const f = (ev.target.files && ev.target.files[0]) || null
+  if(!f) return
+  try{
+    const compressed = await compressImage(f, { maxWidth: 512, quality: 0.9 })
+    const dataUrl = await blobToDataURL(compressed)
+    if(userAvatarPreview) userAvatarPreview.src = dataUrl
+  }catch(e){ console.error('处理头像失败', e) }
+}
+
+function handleSaveProfile(){
+  const nick = (userNickname && userNickname.value && userNickname.value.trim()) || ''
+  const avatar = (userAvatarPreview && userAvatarPreview.src) || null
+  saveUserProfile({ nickname: nick, avatar })
+  updateUserButton({ nickname: nick, avatar })
+  alert('已保存个人资料')
+}
+
+function updateUserButton(profile){
+  if(!userBtn) return
+  const nick = (profile && profile.nickname) || ''
+  const avatar = (profile && profile.avatar) || null
+  if(avatar){
+    userBtn.innerHTML = `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px"> ${nick || '个人中心'}`
+  } else if(nick){
+    userBtn.textContent = nick
+  } else {
+    userBtn.textContent = '个人中心'
+  }
 }
 
 function removeUploadRecord(id){
@@ -356,7 +407,7 @@ function renderGrid(){
 }
 
 // --- User modal handlers ---
-function showUserModal(){ if(!userModal) return; userModal.style.display = 'block'; userModal.setAttribute('aria-hidden','false'); renderUploadGallery() }
+function showUserModal(){ if(!userModal) return; userModal.style.display = 'block'; userModal.setAttribute('aria-hidden','false'); renderUploadGallery(); renderUserProfile() }
 function hideUserModal(){ if(!userModal) return; userModal.style.display = 'none'; userModal.setAttribute('aria-hidden','true') }
 
 if(userBtn) userBtn.addEventListener('click', ()=> showUserModal())
@@ -385,6 +436,10 @@ if(uploadInput) uploadInput.addEventListener('change', async (ev)=>{
   // clear input
   uploadInput.value = ''
 })
+
+// profile wiring
+if(userAvatarInput) userAvatarInput.addEventListener('change', handleAvatarSelected)
+if(userSaveProfile) userSaveProfile.addEventListener('click', handleSaveProfile)
 
 // comment modal wiring
 if(commentClose) commentClose.addEventListener('click', ()=> closeCommentModal())
@@ -750,6 +805,7 @@ window.addEventListener('mouseup', (e)=>{
 // initial render
 ; (async ()=>{
   await loadUserUploads()
+  await (async ()=>{ await (typeof loadUserProfile === 'function' ? loadUserProfile() : Promise.resolve()) })()
   renderFilters()
   renderGrid()
 })()
