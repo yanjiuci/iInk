@@ -4,7 +4,7 @@
   - Runtime caching: cache-first for static assets, network-first for API
   - Background Sync support: queue requests from page and retry in `sync` event
 */
-const PRECACHE = 'precache-v5'
+const PRECACHE = 'precache-v6'
 const RUNTIME = 'runtime'
 
 const PRECACHE_URLS = [
