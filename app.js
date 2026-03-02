@@ -1,16 +1,47 @@
+// 本地壁纸数据 - 从壁纸文件夹加载
 const demoData = (()=>{
-  const cats = ['风景','城市','动物','插画','极简']
   const arr = []
-  for(let i=1;i<=30;i++){
-    const c = cats[i % cats.length]
-    // Use picsum for demo images
+  let id = 1
+  
+  // 书法福系列
+  const calligraphyImages = ['14.jpg', '15.jpg', '16.jpg', '17.jpg']
+  calligraphyImages.forEach((filename, idx) => {
     arr.push({
-      id: i,
-      title: `壁纸 #${i}`,
-      category: c,
-      url: `https://picsum.photos/seed/wallpaper-${i}/600/800`
+      id: id++,
+      title: `书法福 ${idx + 1}`,
+      category: '书法',
+      url: `./壁纸/书法福/${filename}`
     })
-  }
+  })
+  
+  // 熊猫系列
+  const pandaImages = [
+    { file: '冬.jpg', name: '熊猫-冬' },
+    { file: '夏.jpg', name: '熊猫-夏' },
+    { file: '新年.jpg', name: '熊猫-新年' },
+    { file: '春.jpg', name: '熊猫-春' },
+    { file: '秋.jpg', name: '熊猫-秋' }
+  ]
+  pandaImages.forEach((item) => {
+    arr.push({
+      id: id++,
+      title: item.name,
+      category: '熊猫',
+      url: `./壁纸/熊猫/${item.file}`
+    })
+  })
+  
+  // 物体福系列
+  const objectImages = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg']
+  objectImages.forEach((filename, idx) => {
+    arr.push({
+      id: id++,
+      title: `物体福 ${idx + 1}`,
+      category: '创意',
+      url: `./壁纸/物体福/${filename}`
+    })
+  })
+  
   return arr
 })()
 
@@ -48,21 +79,56 @@ const commentAddBtn = document.getElementById('commentAddBtn')
 const editorModal = document.getElementById('editorModal')
 const editorContainer = document.getElementById('editorContainer')
 const editorClose = document.getElementById('editorClose')
-const presetFilter = document.getElementById('presetFilter')
+const editorUndo = document.getElementById('editorUndo')
+const editorRedo = document.getElementById('editorRedo')
+const editorReset = document.getElementById('editorReset')
+
+// Tool panels
+const adjustPanel = document.getElementById('adjustPanel')
+const filterPanel = document.getElementById('filterPanel')
+const cropPanel = document.getElementById('cropPanel')
+const textPanel = document.getElementById('textPanel')
+const stickerPanel = document.getElementById('stickerPanel')
+
+// Adjustment sliders
 const sliders = {
   brightness: document.getElementById('slider-brightness'),
   contrast: document.getElementById('slider-contrast'),
   saturate: document.getElementById('slider-saturate'),
   blur: document.getElementById('slider-blur'),
   hue: document.getElementById('slider-hue'),
-  grayscale: document.getElementById('slider-grayscale'),
-  sepia: document.getElementById('slider-sepia'),
-  invert: document.getElementById('slider-invert')
+  warmth: document.getElementById('slider-warmth'),
+  tint: document.getElementById('slider-tint'),
+  vibrance: document.getElementById('slider-vibrance'),
+  highlights: document.getElementById('slider-highlights'),
+  shadows: document.getElementById('slider-shadows'),
+  vignette: document.getElementById('slider-vignette'),
+  opacity: document.getElementById('slider-opacity')
 }
+
+// Text editor elements
 const editorText = document.getElementById('editorText')
+const editorFont = document.getElementById('editorFont')
+const editorFontSize = document.getElementById('editorFontSize')
+const editorFontSizeValue = document.getElementById('editorFontSizeValue')
+const editorTextColor = document.getElementById('editorTextColor')
+const textBold = document.getElementById('textBold')
+const textItalic = document.getElementById('textItalic')
+const textRotation = document.getElementById('textRotation')
+const textRotationValue = document.getElementById('textRotationValue')
+const textOpacity = document.getElementById('textOpacity')
+const textStroke = document.getElementById('textStroke')
+const textShadow = document.getElementById('textShadow')
 const addTextBtn = document.getElementById('addTextBtn')
+const layerList = document.getElementById('layerList')
+
+// Action buttons
 const editorSaveBtn = document.getElementById('editorSaveBtn')
 const editorExportBtn = document.getElementById('editorExportBtn')
+const rotateLeft = document.getElementById('rotateLeft')
+const rotateRight = document.getElementById('rotateRight')
+const flipH = document.getElementById('flipH')
+const flipV = document.getElementById('flipV')
 
 let currentEditor = null
 let currentItem = null
@@ -473,219 +539,321 @@ function hideEditorModal(){
 async function openEditor(item){
   currentItem = item
   showEditorModal()
-  // clear previous
   if(editorContainer) editorContainer.innerHTML = ''
+  
   try{
     currentEditor = new ImageEditor()
     await currentEditor.load(item.url)
-    // expose to window for debugging in DevTools Console
     try{ window.currentEditor = currentEditor }catch(e){}
-    // attach canvas
     if(editorContainer) editorContainer.appendChild(currentEditor.getElement())
-    // sync controls
+    
+    // Initialize UI
     syncControlsFromEditor()
-    // wire controls
-    Object.keys(sliders).forEach(name=>{
-      const el = sliders[name]
-      if(!el) return
-      el.oninput = ()=>{
-        const val = parseFloat(el.value)
-        currentEditor.adjustImage(name, val)
-        try{ if(typeof updateUndoRedoState === 'function') updateUndoRedoState() }catch(e){}
-      }
-    })
-    if(presetFilter) presetFilter.onchange = ()=>{
-      try{ currentEditor.applyFilter(presetFilter.value) }catch(e){}
+    updateLayerList()
+    updateUndoRedoButtons()
+    
+    // Setup all event handlers
+    setupEditorEventHandlers()
+    
+  }catch(err){
+    console.error('加载图片到编辑器失败', err)
+    alert('无法加载图片到编辑器')
+    closeEditor()
+  }
+}
+
+function setupEditorEventHandlers(){
+  if(!currentEditor) return
+  
+  // Tool switching
+  document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.tool-btn').forEach(b => {
+        b.classList.remove('active')
+        b.style.background = 'transparent'
+        b.style.color = '#999'
+      })
+      btn.classList.add('active')
+      btn.style.background = '#333'
+      btn.style.color = '#fff'
+      
+      // Show corresponding panel
+      const tool = btn.dataset.tool
+      document.querySelectorAll('.tool-panel').forEach(p => p.style.display = 'none')
+      const panel = document.getElementById(tool + 'Panel')
+      if(panel) panel.style.display = 'block'
+    }
+  })
+  
+  // Adjustment sliders
+  Object.keys(sliders).forEach(name => {
+    const el = sliders[name]
+    if(!el) return
+    el.oninput = () => {
+      const val = parseFloat(el.value)
+      currentEditor.adjustImage(name, val)
+      updateValueDisplay(name, val)
+    }
+  })
+  
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      const filter = btn.dataset.filter
+      currentEditor.applyFilter(filter)
       syncControlsFromEditor()
-      try{ if(typeof updateUndoRedoState === 'function') updateUndoRedoState() }catch(e){}
     }
-    if(addTextBtn) addTextBtn.onclick = ()=>{
-      const txt = editorText && editorText.value
+  })
+  
+  // Canvas transforms
+  if(rotateLeft) rotateLeft.onclick = () => currentEditor.rotateCanvas(-90)
+  if(rotateRight) rotateRight.onclick = () => currentEditor.rotateCanvas(90)
+  if(flipH) flipH.onclick = () => currentEditor.flipHorizontal()
+  if(flipV) flipV.onclick = () => currentEditor.flipVertical()
+  
+  // Text controls
+  if(editorFontSize) {
+    editorFontSize.oninput = () => {
+      if(editorFontSizeValue) editorFontSizeValue.textContent = editorFontSize.value + 'px'
+    }
+  }
+  
+  if(textRotation) {
+    textRotation.oninput = () => {
+      if(textRotationValue) textRotationValue.textContent = textRotation.value + '°'
+    }
+  }
+  
+  if(addTextBtn) {
+    addTextBtn.onclick = () => {
+      const txt = editorText && editorText.value.trim()
       if(!txt) return
-      const x = 20
-      const y = (currentEditor.canvas && currentEditor.canvas.height) ? currentEditor.canvas.height - 60 : 20
-      currentEditor.addText(txt, { x, y, fontSize: 28, color: '#fff', stroke: { width: 3, color: 'rgba(0,0,0,0.6)' } })
-      try{ if(typeof updateUndoRedoState === 'function') updateUndoRedoState() }catch(e){}
+      
+      const options = {
+        x: currentEditor.canvas.width / 2,
+        y: currentEditor.canvas.height / 2,
+        fontSize: editorFontSize ? parseInt(editorFontSize.value) : 48,
+        font: editorFont ? editorFont.value : 'sans-serif',
+        color: editorTextColor ? editorTextColor.value : '#fff',
+        bold: textBold ? textBold.classList.contains('active') : false,
+        italic: textItalic ? textItalic.classList.contains('active') : false,
+        rotation: textRotation ? parseInt(textRotation.value) : 0,
+        opacity: textOpacity ? parseFloat(textOpacity.value) : 1,
+        stroke: { 
+          enabled: textStroke ? textStroke.checked : true, 
+          width: 2, 
+          color: 'rgba(0,0,0,0.6)' 
+        },
+        shadow: { 
+          enabled: textShadow ? textShadow.checked : true, 
+          blur: 6, 
+          color: 'rgba(0,0,0,0.3)', 
+          offsetX: 0, 
+          offsetY: 2 
+        }
+      }
+      
+      currentEditor.addText(txt, options)
+      updateLayerList()
+      if(editorText) editorText.value = ''
     }
-    if(editorSaveBtn) editorSaveBtn.onclick = ()=>{
-      const fname = `${item.title.replace(/[^a-z0-9-_]/ig,'') || 'image'}-edited.png`
-      currentEditor.saveToLocal(fname).catch(()=>alert('保存失败'))
+  }
+  
+  // Toggle buttons
+  if(textBold) {
+    textBold.onclick = () => {
+      textBold.classList.toggle('active')
+      textBold.style.background = textBold.classList.contains('active') ? '#0b74ff' : '#333'
     }
-    if(editorExportBtn) editorExportBtn.onclick = async ()=>{
+  }
+  
+  if(textItalic) {
+    textItalic.onclick = () => {
+      textItalic.classList.toggle('active')
+      textItalic.style.background = textItalic.classList.contains('active') ? '#0b74ff' : '#333'
+    }
+  }
+  
+  // Sticker buttons
+  document.querySelectorAll('.sticker-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const emoji = btn.dataset.emoji
+      // Create emoji as sticker using canvas
+      const canvas = document.createElement('canvas')
+      canvas.width = 100
+      canvas.height = 100
+      const ctx = canvas.getContext('2d')
+      ctx.font = '80px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(emoji, 50, 55)
+      
+      const dataUrl = canvas.toDataURL()
+      await currentEditor.addSticker(dataUrl, {
+        width: 80,
+        height: 80
+      })
+      updateLayerList()
+    }
+  })
+  
+  // Undo/Redo/Reset
+  if(editorUndo) editorUndo.onclick = () => {
+    currentEditor.undo()
+    syncControlsFromEditor()
+    updateUndoRedoButtons()
+  }
+  
+  if(editorRedo) editorRedo.onclick = () => {
+    currentEditor.redo()
+    syncControlsFromEditor()
+    updateUndoRedoButtons()
+  }
+  
+  if(editorReset) editorReset.onclick = () => {
+    currentEditor.reset()
+    syncControlsFromEditor()
+    updateLayerList()
+  }
+  
+  // Save/Export
+  if(editorSaveBtn) {
+    editorSaveBtn.onclick = () => {
+      const fname = `${currentItem.title.replace(/[^a-z0-9-_]/ig,'') || 'image'}-edited.png`
+      currentEditor.saveToLocal(fname).catch(() => alert('保存失败'))
+    }
+  }
+  
+  if(editorExportBtn) {
+    editorExportBtn.onclick = async () => {
       try{
         const blob = await currentEditor.exportImage('image/png', 0.92)
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `${item.title}-export.png`
+        a.download = `${currentItem.title}-export.png`
         document.body.appendChild(a)
         a.click()
         a.remove()
         URL.revokeObjectURL(url)
       }catch(e){console.error(e)}
     }
-    // Add undo/redo buttons (create controls container if missing)
-    let controlsEl = editorModal.querySelector('.editor-controls')
-    if(!controlsEl){
-      controlsEl = document.createElement('div')
-      controlsEl.className = 'editor-controls'
-      // Prefer inserting controls into the right-side controls column of the editor panel
-      const rightCol = editorModal.querySelector('.editor-panel > div:nth-child(2) > div:nth-child(2)')
-      if(rightCol) rightCol.insertBefore(controlsEl, rightCol.firstChild)
-      else if(editorContainer && editorContainer.parentNode) editorContainer.parentNode.insertBefore(controlsEl, editorContainer)
-      else if(editorModal) editorModal.appendChild(controlsEl)
-      // basic inline styles so controls are visible
-      controlsEl.style.display = 'flex'
-      controlsEl.style.gap = '8px'
-      controlsEl.style.marginBottom = '8px'
-    }
-
-    // avoid duplicate buttons
-    let undoBtn = controlsEl.querySelector('#undoBtn')
-    let redoBtn = controlsEl.querySelector('#redoBtn')
-    if(!undoBtn){
-      undoBtn = document.createElement('button')
-      undoBtn.id = 'undoBtn'
-      undoBtn.className = 'button'
-      undoBtn.textContent = '撤回'
-      controlsEl.appendChild(undoBtn)
-    }
-    if(!redoBtn){
-      redoBtn = document.createElement('button')
-      redoBtn.id = 'redoBtn'
-      redoBtn.className = 'button'
-      redoBtn.textContent = '重做'
-      controlsEl.appendChild(redoBtn)
-    }
-
-    // Text editing controls
-    let fontSelect = controlsEl.querySelector('#textFont')
-    let boldCheckbox = controlsEl.querySelector('#textBold')
-    let colorInput = controlsEl.querySelector('#textColor')
-    let sizeInput = controlsEl.querySelector('#textSize')
-    let deleteTextBtn = controlsEl.querySelector('#deleteTextBtn')
-    if(!fontSelect){
-      fontSelect = document.createElement('select')
-      fontSelect.id = 'textFont';
-      ['sans-serif','serif','monospace','Georgia','Arial'].forEach(f=>{
-        const o = document.createElement('option')
-        o.value = f
-        o.textContent = f
-        fontSelect.appendChild(o)
-      })
-      controlsEl.appendChild(fontSelect)
-    }
-    if(!boldCheckbox){
-      boldCheckbox = document.createElement('input')
-      boldCheckbox.type = 'checkbox'
-      boldCheckbox.id = 'textBold'
-      const lbl = document.createElement('label')
-      lbl.style.display = 'inline-flex'
-      lbl.style.alignItems = 'center'
-      lbl.style.gap = '6px'
-      lbl.appendChild(boldCheckbox)
-      lbl.appendChild(document.createTextNode('加粗'))
-      controlsEl.appendChild(lbl)
-    }
-    if(!colorInput){
-      colorInput = document.createElement('input')
-      colorInput.type = 'color'
-      colorInput.id = 'textColor'
-      colorInput.value = '#ffffff'
-      controlsEl.appendChild(colorInput)
-    }
-    if(!sizeInput){
-      sizeInput = document.createElement('input')
-      sizeInput.type = 'number'
-      sizeInput.id = 'textSize'
-      sizeInput.min = 8
-      sizeInput.max = 200
-      sizeInput.value = 28
-      sizeInput.style.width = '64px'
-      controlsEl.appendChild(sizeInput)
-    }
-    if(!deleteTextBtn){
-      deleteTextBtn = document.createElement('button')
-      deleteTextBtn.id = 'deleteTextBtn'
-      deleteTextBtn.className = 'button'
-      deleteTextBtn.textContent = '删除文字'
-      controlsEl.appendChild(deleteTextBtn)
-    }
-
-    // update controls when selection changes
-    if(currentEditor) currentEditor.onSelectionChange = (idx, layer)=>{
-      if(!layer){
-        fontSelect.value = 'sans-serif'
-        boldCheckbox.checked = false
-        colorInput.value = '#ffffff'
-        sizeInput.value = 28
-        deleteTextBtn.disabled = true
-      } else {
-        fontSelect.value = layer.font || 'sans-serif'
-        boldCheckbox.checked = (layer.fontWeight === 'bold')
-        // normalize color hex
-        try{ colorInput.value = layer.color || '#ffffff' }catch(e){}
-        sizeInput.value = layer.fontSize || 28
-        deleteTextBtn.disabled = false
-      }
-    }
-
-    // wire text control events
-    fontSelect.onchange = ()=>{
-      const idx = currentEditor && currentEditor._selectedTextIndex
-      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { font: fontSelect.value }) }
-    }
-    boldCheckbox.onchange = ()=>{
-      const idx = currentEditor && currentEditor._selectedTextIndex
-      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { fontWeight: boldCheckbox.checked ? 'bold' : '' }) }
-    }
-    colorInput.onchange = ()=>{
-      const idx = currentEditor && currentEditor._selectedTextIndex
-      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { color: colorInput.value }) }
-    }
-    sizeInput.onchange = ()=>{
-      const idx = currentEditor && currentEditor._selectedTextIndex
-      const v = parseInt(sizeInput.value) || 28
-      if(currentEditor && idx >= 0) { currentEditor.updateText(idx, { fontSize: v }) }
-    }
-    deleteTextBtn.onclick = ()=>{
-      const idx = currentEditor && currentEditor._selectedTextIndex
-      if(currentEditor && idx >= 0){ currentEditor.deleteText(idx); syncControlsFromEditor() }
-    }
-
-    const updateUndoRedoState = ()=>{
-      try{
-        undoBtn.disabled = !(currentEditor && currentEditor.canUndo)
-        redoBtn.disabled = !(currentEditor && currentEditor.canRedo)
-      }catch(e){}
-    }
-
-    undoBtn.onclick = ()=>{ if(currentEditor){ currentEditor.undo(); syncControlsFromEditor(); updateUndoRedoState() } }
-    redoBtn.onclick = ()=>{ if(currentEditor){ currentEditor.redo(); syncControlsFromEditor(); updateUndoRedoState() } }
-    // initialize state
-    updateUndoRedoState()
-
-    // keyboard shortcuts (Ctrl/Cmd+Z, Ctrl/Cmd+Y)
-    window._editorKeyHandler = (ev)=>{
-      if(!editorModal || editorModal.style.display === 'none') return
-      const meta = ev.ctrlKey || ev.metaKey
-      if(!meta) return
-      // Z = undo, Y = redo (Shift+Z -> redo on some platforms)
-      if(ev.key === 'z' || ev.key === 'Z'){
-        ev.preventDefault()
-        if(ev.shift){ if(currentEditor && currentEditor.redo){ currentEditor.redo(); syncControlsFromEditor(); updateUndoRedoState() } }
-        else { if(currentEditor && currentEditor.undo){ currentEditor.undo(); syncControlsFromEditor(); updateUndoRedoState() } }
-      } else if(ev.key === 'y' || ev.key === 'Y'){
-        ev.preventDefault()
-        if(currentEditor && currentEditor.redo){ currentEditor.redo(); syncControlsFromEditor(); updateUndoRedoState() }
-      }
-    }
-    window.addEventListener('keydown', window._editorKeyHandler)
-  }catch(err){
-    console.error('加载图片到编辑器失败', err)
-    alert('无法加载图片到编辑器')
-    closeEditor()
   }
+  
+  // Selection change callback
+  currentEditor.onSelectionChange = (idx, layer) => {
+    updateLayerList()
+  }
+  
+  // Keyboard shortcuts
+  window._editorKeyHandler = (ev) => {
+    if(!editorModal || editorModal.style.display === 'none') return
+    const meta = ev.ctrlKey || ev.metaKey
+    if(!meta) return
+    
+    if(ev.key === 'z' || ev.key === 'Z'){
+      ev.preventDefault()
+      if(ev.shiftKey) {
+        currentEditor.redo()
+      } else {
+        currentEditor.undo()
+      }
+      syncControlsFromEditor()
+      updateUndoRedoButtons()
+    } else if(ev.key === 'y' || ev.key === 'Y'){
+      ev.preventDefault()
+      currentEditor.redo()
+      syncControlsFromEditor()
+      updateUndoRedoButtons()
+    } else if(ev.key === 'Delete' || ev.key === 'Backspace'){
+      const idx = currentEditor.selectedLayerIndex
+      if(idx >= 0){
+        currentEditor.deleteLayer(idx)
+        updateLayerList()
+      }
+    }
+  }
+  window.addEventListener('keydown', window._editorKeyHandler)
+}
+
+function updateValueDisplay(name, val){
+  const displayMap = {
+    brightness: v => Math.round(v * 100) + '%',
+    contrast: v => Math.round(v * 100) + '%',
+    saturate: v => Math.round(v * 100) + '%',
+    blur: v => v + 'px',
+    hue: v => v + '°',
+    warmth: v => v,
+    tint: v => v,
+    vibrance: v => v,
+    highlights: v => v,
+    shadows: v => v,
+    vignette: v => Math.round(v * 100) + '%',
+    opacity: v => Math.round(v * 100) + '%'
+  }
+  const el = document.getElementById('val-' + name)
+  if(el && displayMap[name]) {
+    el.textContent = displayMap[name](val)
+  }
+}
+
+function updateUndoRedoButtons(){
+  if(editorUndo) editorUndo.style.opacity = currentEditor.canUndo ? '1' : '0.5'
+  if(editorRedo) editorRedo.style.opacity = currentEditor.canRedo ? '1' : '0.5'
+}
+
+function updateLayerList(){
+  if(!layerList || !currentEditor) return
+  
+  layerList.innerHTML = ''
+  currentEditor.layers.forEach((layer, idx) => {
+    const item = document.createElement('div')
+    item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px;background:#252525;border-radius:6px;margin-bottom:6px;cursor:pointer;'
+    if(idx === currentEditor.selectedLayerIndex) {
+      item.style.background = '#0b74ff'
+    }
+    
+    const name = layer.type === 'text' ? `文字: ${layer.text.slice(0, 10)}${layer.text.length > 10 ? '...' : ''}` : '贴纸'
+    item.innerHTML = `
+      <span style="color:#fff;font-size:12px;">${name}</span>
+      <div style="display:flex;gap:4px;">
+        <button class="layer-up" data-idx="${idx}" style="padding:2px 6px;background:rgba(255,255,255,0.2);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;">↑</button>
+        <button class="layer-down" data-idx="${idx}" style="padding:2px 6px;background:rgba(255,255,255,0.2);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;">↓</button>
+        <button class="layer-delete" data-idx="${idx}" style="padding:2px 6px;background:rgba(255,0,0,0.5);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;">×</button>
+      </div>
+    `
+    
+    item.onclick = (e) => {
+      if(e.target.tagName === 'BUTTON') return
+      currentEditor._selectedLayerIndex = idx
+      currentEditor._render()
+      updateLayerList()
+    }
+    
+    layerList.appendChild(item)
+  })
+  
+  // Layer control buttons
+  layerList.querySelectorAll('.layer-up').forEach(btn => {
+    btn.onclick = () => {
+      currentEditor.moveLayer(parseInt(btn.dataset.idx), 'up')
+      updateLayerList()
+    }
+  })
+  
+  layerList.querySelectorAll('.layer-down').forEach(btn => {
+    btn.onclick = () => {
+      currentEditor.moveLayer(parseInt(btn.dataset.idx), 'down')
+      updateLayerList()
+    }
+  })
+  
+  layerList.querySelectorAll('.layer-delete').forEach(btn => {
+    btn.onclick = () => {
+      currentEditor.deleteLayer(parseInt(btn.dataset.idx))
+      updateLayerList()
+    }
+  })
 }
 
 function closeEditor(){
@@ -701,31 +869,17 @@ function closeEditor(){
 
 function syncControlsFromEditor(){
   if(!currentEditor) return
+  
+  // Sync filter sliders
   const f = currentEditor.filters || {}
-  Object.keys(sliders).forEach(name=>{
+  Object.keys(sliders).forEach(name => {
     const el = sliders[name]
     if(!el) return
-    if(typeof f[name] !== 'undefined') el.value = f[name]
-  })
-  // sync text controls if available
-  try{
-    const idx = currentEditor._selectedTextIndex
-    const fontSelect = document.getElementById('textFont')
-    const boldCheckbox = document.getElementById('textBold')
-    const colorInput = document.getElementById('textColor')
-    const sizeInput = document.getElementById('textSize')
-    const deleteTextBtn = document.getElementById('deleteTextBtn')
-    if(idx >= 0 && currentEditor.textLayers && currentEditor.textLayers[idx]){
-      const layer = currentEditor.textLayers[idx]
-      if(fontSelect) fontSelect.value = layer.font || 'sans-serif'
-      if(boldCheckbox) boldCheckbox.checked = (layer.fontWeight === 'bold')
-      if(colorInput) try{ colorInput.value = layer.color || '#ffffff' }catch(e){}
-      if(sizeInput) sizeInput.value = layer.fontSize || 28
-      if(deleteTextBtn) deleteTextBtn.disabled = false
-    }else{
-      if(deleteTextBtn) deleteTextBtn.disabled = true
+    if(typeof f[name] !== 'undefined') {
+      el.value = f[name]
+      updateValueDisplay(name, f[name])
     }
-  }catch(e){}
+  })
 }
 
 // Simple pull-to-refresh implementation (works on touch devices)
