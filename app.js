@@ -10,7 +10,7 @@ const demoData = (()=>{
       id: id++,
       title: `书法福 ${idx + 1}`,
       category: '书法',
-      url: `./壁纸/书法福/${filename}`
+      url: `./书法福/${filename}`
     })
   })
   
@@ -27,7 +27,7 @@ const demoData = (()=>{
       id: id++,
       title: item.name,
       category: '熊猫',
-      url: `./壁纸/熊猫/${item.file}`
+      url: `./熊猫/${item.file}`
     })
   })
   
@@ -38,7 +38,7 @@ const demoData = (()=>{
       id: id++,
       title: `物体福 ${idx + 1}`,
       category: '创意',
-      url: `./壁纸/物体福/${filename}`
+      url: `./物体福/${filename}`
     })
   })
   
