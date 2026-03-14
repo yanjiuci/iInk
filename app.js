@@ -47,14 +47,15 @@ const demoData = (()=>{
 
 const state = {
   items: demoData,
-  filter: '全部'
+  filter: '全部',
+  searchQuery: ''
 }
 
 import ImageEditor from './image-editor.js'
 import { compressImage, LocalStorageManager } from './utils.js'
 
 const grid = document.getElementById('grid')
-const filtersEl = document.getElementById('filters')
+const searchInput = document.getElementById('searchInput')
 const template = document.getElementById('tile-template')
 const installBtn = document.getElementById('installBtn')
 // user profile / upload elements
@@ -142,20 +143,30 @@ const interactionStore = new LocalStorageManager('interaction')
 const INTERACTIONS_KEY = 'interactions'
 let interactions = interactionStore.get(INTERACTIONS_KEY, {}) || {}
 
-// 图片尺寸缓存（用于自适应高度）
-const imageSizeCache = new Map()
-
 function saveInteractions(){ interactionStore.set(INTERACTIONS_KEY, interactions) }
 
-function getInteraction(id){ return interactions[String(id)] || { liked: false, likes: 0, comments: [] } }
+function getInteraction(id){ return interactions[String(id)] || { liked: false, likes: 0, comments: [], collected: false, collects: 0 } }
 
 function toggleLikeById(id){
   const key = String(id)
-  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[] }
+  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0 }
   interactions[key].liked = !interactions[key].liked
   if(interactions[key].liked) interactions[key].likes = (interactions[key].likes||0) + 1
   else interactions[key].likes = Math.max(0, (interactions[key].likes||0) - 1)
   saveInteractions()
+  updateProfileStats()
+  return interactions[key]
+}
+
+// 收藏功能
+function toggleCollectById(id){
+  const key = String(id)
+  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0 }
+  interactions[key].collected = !interactions[key].collected
+  if(interactions[key].collected) interactions[key].collects = (interactions[key].collects||0) + 1
+  else interactions[key].collects = Math.max(0, (interactions[key].collects||0) - 1)
+  saveInteractions()
+  updateProfileStats()
   return interactions[key]
 }
 
@@ -267,14 +278,18 @@ function saveUserProfile(profile){
 }
 
 function getUserProfile(){
-  return userStore.get(USER_PROFILE_KEY, { nickname: '', avatar: null })
+  return userStore.get(USER_PROFILE_KEY, { nickname: '', avatar: null, bio: '' })
 }
 
 function renderUserProfile(){
   const p = getUserProfile()
   if(userNickname) userNickname.value = p.nickname || ''
   if(userAvatarPreview) userAvatarPreview.src = p.avatar || 'icons/icon.svg'
+  // 渲染简介
+  const userBio = document.getElementById('userBio')
+  if(userBio) userBio.value = p.bio || ''
   updateUserButton(p)
+  updateProfileStats()
 }
 
 async function handleAvatarSelected(ev){
@@ -290,8 +305,12 @@ async function handleAvatarSelected(ev){
 function handleSaveProfile(){
   const nick = (userNickname && userNickname.value && userNickname.value.trim()) || ''
   const avatar = (userAvatarPreview && userAvatarPreview.src) || null
-  saveUserProfile({ nickname: nick, avatar })
+  const userBioEl = document.getElementById('userBio')
+  const bio = (userBioEl && userBioEl.value && userBioEl.value.trim()) || ''
+
+  saveUserProfile({ nickname: nick, avatar, bio })
   updateUserButton({ nickname: nick, avatar })
+  updateProfileStats()
   alert('已保存个人资料')
 }
 
@@ -302,9 +321,20 @@ function updateUserButton(profile){
   if(avatar){
     userBtn.innerHTML = `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px"> ${nick || '个人中心'}`
   } else if(nick){
-    userBtn.textContent = nick
+    userBtn.innerHTML = `<span style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;display:inline-block;background:#ddd;text-align:center;line-height:20px;font-size:12px;">${nick.charAt(0)}</span> ${nick}`
   } else {
-    userBtn.textContent = '个人中心'
+    userBtn.innerHTML = '<span style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;display:inline-block;background:#ddd;text-align:center;line-height:20px;">👤</span> 个人中心'
+  }
+
+  // 更新头部导航的头像
+  const headerAvatar = document.getElementById('headerAvatar')
+  const headerNickname = document.getElementById('headerNickname')
+  if(headerAvatar && avatar){
+    headerAvatar.style.backgroundImage = `url(${avatar})`
+    headerAvatar.style.backgroundSize = 'cover'
+    headerAvatar.textContent = ''
+  } else if(headerNickname) {
+    headerNickname.textContent = nick || '个人中心'
   }
 }
 
@@ -336,7 +366,6 @@ function renderUploadGallery(){
     img.addEventListener('click', ()=>{
       // insert into main grid view (move to top)
       state.items.unshift({ id: u.id, title: u.title || '上传图片', category: '上传', url: u.dataUrl, uploaded: true })
-      renderFilters()
       renderGrid()
     })
     const btnRow = document.createElement('div')
@@ -349,7 +378,6 @@ function renderUploadGallery(){
       // remove from storage and from state
       removeUploadRecord(u.id)
       state.items = state.items.filter(i=>i.id !== u.id)
-      renderFilters()
       renderGrid()
       renderUploadGallery()
     })
@@ -370,7 +398,6 @@ function renderFilters(){
     if(cat === state.filter) btn.classList.add('active')
     btn.addEventListener('click', ()=>{
       state.filter = cat
-      renderFilters()
       renderGrid()
     })
     filtersEl.appendChild(btn)
@@ -464,57 +491,28 @@ const nextBtn = document.getElementById('nextBtn')
 if(prevBtn) prevBtn.addEventListener('click', () => navigatePreview(-1))
 if(nextBtn) nextBtn.addEventListener('click', () => navigatePreview(1))
 
-// 加载图片并获取尺寸
-function loadImageSize(url) {
-  return new Promise((resolve) => {
-    // 先检查缓存
-    if (imageSizeCache.has(url)) {
-      resolve(imageSizeCache.get(url))
-      return
-    }
-    const img = new Image()
-    img.onload = () => {
-      const size = { width: img.naturalWidth, height: img.naturalHeight }
-      imageSizeCache.set(url, size)
-      resolve(size)
-    }
-    img.onerror = () => {
-      resolve({ width: 300, height: 400 }) // 默认值
-    }
-    img.src = url
-  })
-}
-
-// 计算卡片高度（参考小红书：列宽固定，高度根据图片比例自适应）
-function calculateCardHeight(imgWidth, imgHeight, containerWidth) {
-  // 计算缩略图在容器中的高度
-  const aspectRatio = imgHeight / imgWidth
-  return Math.round(containerWidth * aspectRatio)
-}
-
 function renderGrid(){
   clearGrid()
-  const items = state.filter === '全部' ? state.items : state.items.filter(i=>i.category===state.filter)
+
+  // 先按分类筛选，再按搜索关键词筛选
+  let items = state.filter === '全部' ? state.items : state.items.filter(i=>i.category===state.filter)
+
+  // 搜索过滤
+  if (state.searchQuery.trim()) {
+    const query = state.searchQuery.toLowerCase().trim()
+    items = items.filter(item =>
+      item.title.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query)
+    )
+  }
+
   if(items.length === 0){
     const el = document.createElement('div')
     el.className = 'loading'
-    el.textContent = '无可显示的壁纸'
+    el.textContent = state.searchQuery ? '未找到匹配的壁纸' : '无可显示的壁纸'
     grid.appendChild(el)
     return
   }
-
-  // 获取网格容器的实际列宽
-  const gridStyle = window.getComputedStyle(grid)
-  const gridGap = parseFloat(gridStyle.gap) || 12
-  const gridPadding = parseFloat(gridStyle.paddingLeft) || 12
-  const containerWidth = grid.clientWidth - gridPadding * 2
-
-  // 计算每列的宽度（3列模式）
-  let columnCount = 3
-  if (window.innerWidth <= 600) columnCount = 1
-  else if (window.innerWidth <= 1000) columnCount = 2
-
-  const columnWidth = (containerWidth - gridGap * (columnCount - 1)) / columnCount
 
   items.forEach(item=>{
     const node = template.content.cloneNode(true)
@@ -527,22 +525,34 @@ function renderGrid(){
     const editBtn = node.querySelector('.edit-btn')
     if(editBtn) editBtn.addEventListener('click', ()=>openEditor(item))
 
-    // like/comment UI
+    // like/comment/collect/share UI
     const likeBtn = node.querySelector('.like-btn')
     const likeCount = node.querySelector('.like-count')
     const commentCount = node.querySelector('.comment-count')
     const commentBtn = node.querySelector('.comment-btn')
+    const collectBtn = node.querySelector('.collect-btn')
+    const collectCount = node.querySelector('.collect-count')
+    const shareBtn = node.querySelector('.share-btn')
     try{
       const info = getInteraction(item.id)
       if(likeCount) likeCount.textContent = info.likes || 0
       if(commentCount) commentCount.textContent = (info.comments && info.comments.length) || 0
-      if(likeBtn) { if(info.liked) likeBtn.classList.add('active') }
+      if(collectCount) collectCount.textContent = info.collects || 0
+      if(likeBtn) { if(info.liked) { likeBtn.classList.add('active'); likeBtn.textContent = '♥' } else { likeBtn.textContent = '♡' } }
+      if(collectBtn) { if(info.collected) { collectBtn.classList.add('active'); collectBtn.textContent = '★' } else { collectBtn.textContent = '☆' } }
       if(likeBtn) likeBtn.addEventListener('click', ()=>{
         const res = toggleLikeById(item.id)
         if(likeCount) likeCount.textContent = res.likes
-        if(likeBtn) { if(res.liked) likeBtn.classList.add('active'); else likeBtn.classList.remove('active') }
+        if(likeBtn) { if(res.liked) { likeBtn.classList.add('active'); likeBtn.textContent = '♥' } else { likeBtn.classList.remove('active'); likeBtn.textContent = '♡' } }
+      })
+      if(collectBtn) collectBtn.addEventListener('click', ()=>{
+        const res = toggleCollectById(item.id)
+        if(collectCount) collectCount.textContent = res.collects
+        if(collectBtn) { if(res.collected) { collectBtn.classList.add('active'); collectBtn.textContent = '★' } else { collectBtn.classList.remove('active'); collectBtn.textContent = '☆' } }
       })
       if(commentBtn) commentBtn.addEventListener('click', ()=> openCommentModalFor(item))
+      // 分享功能
+      if(shareBtn) shareBtn.addEventListener('click', ()=> shareImage(item))
     }catch(e){}
 
     // Use data-src + loading=lazy attribute to defer load
@@ -550,12 +560,6 @@ function renderGrid(){
     img.alt = item.title
     img.loading = 'lazy'
     img.addEventListener('error', ()=>{img.style.background = '#f2f2f2'})
-
-    // 异步加载图片尺寸并设置卡片高度
-    loadImageSize(item.url).then(size => {
-      const cardHeight = calculateCardHeight(size.width, size.height, columnWidth)
-      tile.style.height = cardHeight + 'px'
-    })
 
     // 点击打开全屏预览（小红书风格）
     img.addEventListener('click', (e) => showPreview(item, e))
@@ -591,7 +595,6 @@ if(uploadInput) uploadInput.addEventListener('change', async (ev)=>{
       persistUploadRecord({ id, title: f.name, dataUrl, date: Date.now() })
     }catch(err){ console.error('上传处理失败', err) }
   }
-  renderFilters()
   renderGrid()
   renderUploadGallery()
   // clear input
@@ -977,87 +980,206 @@ function syncControlsFromEditor(){
   })
 }
 
-// Simple pull-to-refresh implementation (works on touch devices)
-let startY = 0
-let pulling = false
-const pullEl = document.getElementById('pullToRefresh')
-
-function setPullHeight(h){
-  pullEl.style.height = h + 'px'
-}
-
-function refreshAction(){
-  // simulate refresh: shuffle items and re-render
-  state.items = state.items.sort(()=>Math.random()-0.5)
-  renderGrid()
-}
-
-window.addEventListener('touchstart', (e)=>{
-  if(window.scrollY === 0){
-    startY = e.touches[0].clientY
-    pulling = true
-  }
-})
-
-window.addEventListener('touchmove', (e)=>{
-  if(!pulling) return
-  const delta = e.touches[0].clientY - startY
-  if(delta > 0){
-    setPullHeight(Math.min(delta,120))
-  } else {
-    setPullHeight(0)
-  }
-})
-
-window.addEventListener('touchend', (e)=>{
-  if(!pulling) return
-  const endY = e.changedTouches[0].clientY
-  const delta = endY - startY
-  setPullHeight(0)
-  pulling = false
-  if(delta > 80){
-    // show temporary loading
-    pullEl.textContent = '刷新中…'
-    pullEl.style.height = '40px'
-    setTimeout(()=>{
-      refreshAction()
-      pullEl.style.height = '0'
-      pullEl.textContent = '下拉刷新'
-    }, 800)
-  }
-})
-
-// Optional mouse-based pull-to-refresh for desktop testing
-let mouseDown = false
-window.addEventListener('mousedown', (e)=>{if(window.scrollY===0){mouseDown=true;startY=e.clientY}})
-window.addEventListener('mousemove', (e)=>{
-  if(!mouseDown) return
-  const delta = e.clientY - startY
-  if(delta>0) setPullHeight(Math.min(delta,120))
-})
-window.addEventListener('mouseup', (e)=>{
-  if(!mouseDown) return
-  mouseDown=false
-  const delta = e.clientY - startY
-  setPullHeight(0)
-  if(delta>80){
-    pullEl.textContent = '刷新中…'
-    pullEl.style.height = '40px'
-    setTimeout(()=>{
-      refreshAction()
-      pullEl.style.height = '0'
-      pullEl.textContent = '下拉刷新'
-    },800)
-  }
-})
-
 // initial render
 ; (async ()=>{
+  console.log('开始初始化...')
   await loadUserUploads()
-  await (async ()=>{ await (typeof loadUserProfile === 'function' ? loadUserProfile() : Promise.resolve()) })()
-  renderFilters()
+  console.log('用户上传加载完成')
   renderGrid()
+  console.log('网格渲染完成')
+  initSearch()
+  initCategoryTabs()
+  console.log('分类标签初始化完成')
+  updateProfileStats()
+  console.log('统计更新完成')
 })()
+
+// 搜索功能初始化
+function initSearch(){
+  if(!searchInput) return
+  searchInput.addEventListener('input', (e) => {
+    state.searchQuery = e.target.value
+    renderGrid()
+  })
+}
+
+// 分类标签初始化
+function initCategoryTabs(){
+  const tabs = document.querySelectorAll('.category-tab')
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // 更新激活状态
+      tabs.forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+
+      // 更新筛选状态
+      const category = tab.dataset.category
+      state.filter = category
+      renderGrid()
+    })
+  })
+
+  // 菜单项点击事件
+  const menuItems = document.querySelectorAll('.menu-item')
+  menuItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const text = item.querySelector('div').textContent
+      hideUserModal()
+
+      if(text.includes('上传')){
+        // 显示我的上传
+        const uploads = userStore.get(USER_UPLOADS_KEY, []) || []
+        const items = uploads.map(u => ({
+          id: u.id,
+          title: u.title || '上传图片',
+          category: '上传',
+          url: u.dataUrl
+        }))
+        showContentModal('我的上传', items, '暂无上传')
+      } else if(text.includes('点赞')){
+        // 显示我点赞的图片
+        const items = getLikedItems()
+        showContentModal('我的点赞', items, '还没有点赞任何图片')
+      } else if(text.includes('评论')){
+        // 显示我的评论
+        const comments = getMyComments()
+        const modal = document.getElementById('contentModal')
+        const modalTitle = document.getElementById('contentModalTitle')
+        const contentList = document.getElementById('contentList')
+
+        modalTitle.textContent = '我的评论'
+        if(comments.length === 0){
+          contentList.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">还没有评论过</div>'
+        } else {
+          contentList.innerHTML = ''
+          comments.forEach(c => {
+            const div = document.createElement('div')
+            div.style.cssText = 'padding:10px;border-bottom:1px solid #eee;'
+            div.innerHTML = `
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
+                <img src="${c.itemUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+                <div style="font-weight:500;font-size:13px;">${c.itemTitle}</div>
+              </div>
+              <div style="color:#333;font-size:14px;padding-left:50px;">${c.text}</div>
+              <div style="color:#999;font-size:11px;padding-left:50px;margin-top:4px;">${new Date(c.date).toLocaleString()}</div>
+            `
+            contentList.appendChild(div)
+          })
+        }
+        modal.style.display = 'block'
+      } else if(text.includes('收藏')){
+        // 显示我收藏的图片
+        const items = getCollectedItems()
+        showContentModal('我的收藏', items, '还没有收藏任何图片')
+      }
+    })
+  })
+}
+
+// 更新个人中心统计数据
+function updateProfileStats(){
+  const uploads = userStore.get(USER_UPLOADS_KEY, []) || []
+  let totalLikes = 0
+  let totalComments = 0
+  let totalCollects = 0
+  let likedCount = 0
+  let collectedCount = 0
+
+  // 统计点赞、评论、收藏
+  Object.values(interactions).forEach(item => {
+    totalLikes += (item.likes || 0)
+    totalComments += (item.comments ? item.comments.length : 0)
+    totalCollects += (item.collects || 0)
+    if(item.liked) likedCount++
+    if(item.collected) collectedCount++
+  })
+
+  // 更新 DOM
+  const statLikes = document.getElementById('statLikes')
+  const statUploads = document.getElementById('statUploads')
+  const statComments = document.getElementById('statComments')
+  const statCollects = document.getElementById('statCollects')
+
+  if(statLikes) statLikes.textContent = likedCount  // 显示点赞数
+  if(statUploads) statUploads.textContent = uploads.length
+  if(statComments) statComments.textContent = totalComments
+  if(statCollects) statCollects.textContent = collectedCount
+}
+
+// 获取我点赞过的图片
+function getLikedItems(){
+  return state.items.filter(item => {
+    const info = interactions[String(item.id)]
+    return info && info.liked
+  })
+}
+
+// 获取我收藏的图片
+function getCollectedItems(){
+  return state.items.filter(item => {
+    const info = interactions[String(item.id)]
+    return info && info.collected
+  })
+}
+
+// 获取我的评论
+function getMyComments(){
+  const comments = []
+  Object.entries(interactions).forEach(([id, data]) => {
+    if(data.comments && data.comments.length > 0){
+      data.comments.forEach(c => {
+        const item = state.items.find(i => String(i.id) === id)
+        comments.push({
+          itemId: id,
+          itemTitle: item ? item.title : '未知',
+          itemUrl: item ? item.url : '',
+          ...c
+        })
+      })
+    }
+  })
+  return comments
+}
+
+// 显示内容列表弹窗
+function showContentModal(title, items, emptyMsg){
+  const modal = document.getElementById('contentModal')
+  const modalTitle = document.getElementById('contentModalTitle')
+  const contentList = document.getElementById('contentList')
+
+  if(!modal || !modalTitle || !contentList) return
+
+  modalTitle.textContent = title
+  contentList.innerHTML = ''
+
+  if(!items || items.length === 0){
+    contentList.innerHTML = `<div style="text-align:center;color:#999;padding:40px;">${emptyMsg}</div>`
+  } else {
+    items.forEach(item => {
+      const div = document.createElement('div')
+      div.style.cssText = 'display:flex;gap:12px;padding:10px;border-bottom:1px solid #eee;cursor:pointer;'
+      div.innerHTML = `
+        <img src="${item.url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;">
+        <div style="flex:1;">
+          <div style="font-weight:500;">${item.title}</div>
+          <div style="font-size:12px;color:#999;">${item.category}</div>
+        </div>
+      `
+      div.addEventListener('click', () => {
+        modal.style.display = 'none'
+        showPreview(item, {})
+      })
+      contentList.appendChild(div)
+    })
+  }
+
+  modal.style.display = 'block'
+}
+
+function hideContentModal(){
+  const modal = document.getElementById('contentModal')
+  if(modal) modal.style.display = 'none'
+}
 
 // --- PWA: service worker registration ---
 if('serviceWorker' in navigator){
@@ -1104,6 +1226,30 @@ async function saveImage(item){
   }catch(err){
     // On iOS Safari, best action is to instruct user to long-press the image
     alert('无法直接保存，请长按图片并选择”添加到照片”或使用分享功能。')
+  }
+}
+
+// 分享功能
+async function shareImage(item){
+  try{
+    const resp = await fetch(item.url)
+    const blob = await resp.blob()
+    const file = new File([blob], `${item.title}.jpg`, {type: blob.type})
+
+    if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      await navigator.share({
+        files: [file],
+        title: item.title,
+        text: `来自壁纸库的${item.title}`
+      })
+    } else {
+      // 复制图片链接到剪贴板
+      const url = URL.createObjectURL(blob)
+      await navigator.clipboard.writeText(item.url)
+      alert('图片链接已复制到剪贴板')
+    }
+  }catch(err){
+    alert('分享失败，请重试')
   }
 }
 

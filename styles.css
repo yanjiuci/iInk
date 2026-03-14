@@ -7,10 +7,28 @@
 	padding-left: env(safe-area-inset-left);
 }
 
-body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#fafafa;color:#111}
-.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10}
-.app-header h1{margin:0;font-size:18px}
-.filters{display:flex;gap:8px;flex-wrap:wrap}
+body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#f5f5f5;color:#111}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10;gap:16px;}
+.app-header h1{margin:0;font-size:20px;color:#111;}
+.header-left{flex:0 0 auto;}
+.header-center{flex:1;max-width:400px;}
+.header-right{display:flex;gap:8px;align-items:center;}
+
+/* 搜索框 */
+.search-box{display:flex;align-items:center;background:#f5f5f5;border-radius:20px;padding:8px 14px;gap:8px;}
+.search-box input{border:none;background:transparent;outline:none;flex:1;font-size:14px;min-width:120px;}
+.search-icon{font-size:14px;}
+
+/* 用户按钮 */
+.user-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;white-space:nowrap;border:1px solid #eee;}
+.user-avatar-small{width:24px;height:24px;border-radius:50%;background:#f0f0f0;display:inline-block;background-size:cover;background-position:center;text-align:center;line-height:24px;font-size:12px;color:#999;}
+
+/* 分类标签栏 */
+.category-tabs{display:flex;gap:8px;padding:12px 16px;background:#fff;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.category-tabs::-webkit-scrollbar{display:none;}
+.category-tab{padding:8px 16px;border:none;background:#f5f5f5;border-radius:20px;font-size:13px;color:#666;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.category-tab.active{background:#0b74ff;color:#fff;}
+.category-tab:hover:not(.active){background:#e8e8e8;}
 .button{padding:6px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:14px}
 .button.active{background:#0b74ff;color:#fff;border-color:#0b74ff}
 /* iOS style subtle shadow and smoother transitions */
@@ -18,18 +36,22 @@ body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#fafafa;colo
 .button:active{transform:scale(0.96)}
 
 main{padding:12px}
-.pull-area{height:0;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;transition:height 160ms ease}
 
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .tile{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;flex-direction:column}
-.tile-media{width:100%;overflow:hidden;background:#eee;position:relative;display:block}
-/* 移除固定的 aspect-ratio，让高度由内容决定 */
-.tile-media::before{content:none;display:none}
-.tile-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 420ms cubic-bezier(.22,.9,.28,1)}
+.tile-media{width:100%;aspect-ratio:3/4;overflow:hidden;background:#eee;position:relative}
+.tile-media::before{content:"";display:block;padding-top:133.3333%}
+.tile-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform 420ms cubic-bezier(.22,.9,.28,1)}
 .tile:active .tile-img{transform:scale(0.995)}
 .tile-meta{padding:8px 10px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
 .tile-meta .title{color:#111;font-weight:600}
 .tile-meta .category{font-size:12px;color:#666}
+.tile-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.tile-actions .button{padding:4px 8px;font-size:12px;}
+.collect-btn{background:transparent;border:none;color:#f4a261;}
+.collect-btn.active{color:#e76f51;}
+.like-btn{background:transparent;border:none;color:#e74c3c;font-size:14px;}
+.like-btn.active{color:#c0392b;}
 
 .save-btn{padding:6px 8px;border-radius:6px;border:1px solid #eee;background:linear-gradient(#fff,#fafbff);font-size:12px}
 .save-btn:active{transform:scale(0.97)}
@@ -139,9 +161,15 @@ main{padding:12px}
 #uploadGallery img{border-radius:6px}
 #uploadGallery .button{font-size:12px;padding:4px 6px}
 
-/* user profile avatar */
-#userAvatarPreview{width:80px;height:80px;border-radius:50%;object-fit:cover;border:1px solid #eee}
+/* 用户头像 */
+#userAvatarPreview{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #eee}
 #userAvatarInput{width:100%}
+
+/* 个人中心弹窗样式 */
+.user-modal .user-panel{background:#fff;border-radius:12px;}
+.user-modal .profile-header{border-bottom:1px solid #eee;padding-bottom:20px;}
+.user-modal .profile-stats{justify-content:center;gap:40px;}
+.user-modal .stat-item{min-width:60px;}
 
 /* Like / Comment buttons */
 .like-btn{background:transparent;border-color:transparent;color:#e74c3c}
