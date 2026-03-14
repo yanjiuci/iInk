@@ -22,10 +22,10 @@ main{padding:12px}
 
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .tile{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;flex-direction:column}
-.tile-media{width:100%;aspect-ratio:3/4;overflow:hidden;background:#eee;position:relative}
-/* Fallback for browsers without aspect-ratio: use padding to enforce 3:4 */
-.tile-media::before{content:"";display:block;padding-top:133.3333%}
-.tile-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform 420ms cubic-bezier(.22,.9,.28,1)}
+.tile-media{width:100%;overflow:hidden;background:#eee;position:relative;display:block}
+/* 移除固定的 aspect-ratio，让高度由内容决定 */
+.tile-media::before{content:none;display:none}
+.tile-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 420ms cubic-bezier(.22,.9,.28,1)}
 .tile:active .tile-img{transform:scale(0.995)}
 .tile-meta{padding:8px 10px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
 .tile-meta .title{color:#111;font-weight:600}
@@ -44,7 +44,94 @@ main{padding:12px}
 /* Preview modal styles */
 .preview-modal{display:none}
 .preview-panel{background:transparent}
-.preview-backdrop{cursor:pointer}
+/* 小红书风格预览 */
+.preview-modal .preview-backdrop {
+  cursor: pointer;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.preview-modal.preview-active .preview-backdrop {
+  opacity: 1;
+}
+#previewImage {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+.preview-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#previewTitle {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 14px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  z-index: 10;
+  max-width: 80%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#previewClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 20;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+#previewClose:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* 导航箭头 */
+.preview-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  z-index: 15;
+}
+.preview-nav:hover {
+  background: rgba(255,255,255,0.3);
+}
+.preview-nav.prev { left: 16px; }
+.preview-nav.next { right: 16px; }
 
 /* User modal / gallery */
 .user-modal{display:none}

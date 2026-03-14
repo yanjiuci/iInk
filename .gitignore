@@ -1,0 +1,14 @@
+# Claude Code 工作目录
+.claude/
+Claude/
+
+# 忽略 key.txt (个人文件)
+key.txt
+
+# 忽略 IDE 和系统文件
+.DS_Store
+Thumbs.db
+*.log
+
+# Node.js (如果有)
+node_modules/

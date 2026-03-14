@@ -142,6 +142,9 @@ const interactionStore = new LocalStorageManager('interaction')
 const INTERACTIONS_KEY = 'interactions'
 let interactions = interactionStore.get(INTERACTIONS_KEY, {}) || {}
 
+// 图片尺寸缓存（用于自适应高度）
+const imageSizeCache = new Map()
+
 function saveInteractions(){ interactionStore.set(INTERACTIONS_KEY, interactions) }
 
 function getInteraction(id){ return interactions[String(id)] || { liked: false, likes: 0, comments: [] } }
@@ -398,24 +401,96 @@ const previewModal = document.getElementById('previewModal')
 const previewImage = document.getElementById('previewImage')
 const previewClose = document.getElementById('previewClose')
 const previewBackdrop = previewModal && previewModal.querySelector('.preview-backdrop')
+const previewTitle = document.getElementById('previewTitle')
 
-function showPreview(url, title){
+// 当前预览的图片索引
+let currentPreviewIndex = 0
+let previewItems = []
+
+// 显示预览（小红书风格）
+function showPreview(item, clickEvent) {
   if(!previewModal || !previewImage) return
-  previewImage.src = url
-  previewImage.alt = title || '预览'
+
+  // 获取当前筛选下的所有图片
+  const items = state.filter === '全部' ? state.items : state.items.filter(i=>i.category===state.filter)
+  previewItems = items
+  currentPreviewIndex = items.findIndex(i => i.id === item.id)
+
+  // 设置图片和标题
+  previewImage.src = item.url
+  previewImage.alt = item.title
+  if(previewTitle) previewTitle.textContent = item.title
+
+  // 显示模态框
   previewModal.style.display = 'block'
   previewModal.setAttribute('aria-hidden','false')
+
+  // 添加进入动画
+  requestAnimationFrame(() => {
+    previewModal.classList.add('preview-active')
+  })
 }
 
 function hidePreview(){
   if(!previewModal) return
-  previewModal.style.display = 'none'
-  previewModal.setAttribute('aria-hidden','true')
-  if(previewImage) previewImage.src = ''
+  previewModal.classList.remove('preview-active')
+  setTimeout(() => {
+    previewModal.style.display = 'none'
+    previewModal.setAttribute('aria-hidden','true')
+    if(previewImage) previewImage.src = ''
+  }, 300)
+}
+
+// 键盘导航
+function navigatePreview(direction) {
+  if (previewItems.length === 0) return
+
+  currentPreviewIndex += direction
+  if (currentPreviewIndex < 0) currentPreviewIndex = previewItems.length - 1
+  if (currentPreviewIndex >= previewItems.length) currentPreviewIndex = 0
+
+  const item = previewItems[currentPreviewIndex]
+  previewImage.src = item.url
+  previewImage.alt = item.title
+  if(previewTitle) previewTitle.textContent = item.title
 }
 
 if(previewClose) previewClose.addEventListener('click', hidePreview)
 if(previewBackdrop) previewBackdrop.addEventListener('click', hidePreview)
+
+// 导航按钮
+const prevBtn = document.getElementById('prevBtn')
+const nextBtn = document.getElementById('nextBtn')
+if(prevBtn) prevBtn.addEventListener('click', () => navigatePreview(-1))
+if(nextBtn) nextBtn.addEventListener('click', () => navigatePreview(1))
+
+// 加载图片并获取尺寸
+function loadImageSize(url) {
+  return new Promise((resolve) => {
+    // 先检查缓存
+    if (imageSizeCache.has(url)) {
+      resolve(imageSizeCache.get(url))
+      return
+    }
+    const img = new Image()
+    img.onload = () => {
+      const size = { width: img.naturalWidth, height: img.naturalHeight }
+      imageSizeCache.set(url, size)
+      resolve(size)
+    }
+    img.onerror = () => {
+      resolve({ width: 300, height: 400 }) // 默认值
+    }
+    img.src = url
+  })
+}
+
+// 计算卡片高度（参考小红书：列宽固定，高度根据图片比例自适应）
+function calculateCardHeight(imgWidth, imgHeight, containerWidth) {
+  // 计算缩略图在容器中的高度
+  const aspectRatio = imgHeight / imgWidth
+  return Math.round(containerWidth * aspectRatio)
+}
 
 function renderGrid(){
   clearGrid()
@@ -427,6 +502,19 @@ function renderGrid(){
     grid.appendChild(el)
     return
   }
+
+  // 获取网格容器的实际列宽
+  const gridStyle = window.getComputedStyle(grid)
+  const gridGap = parseFloat(gridStyle.gap) || 12
+  const gridPadding = parseFloat(gridStyle.paddingLeft) || 12
+  const containerWidth = grid.clientWidth - gridPadding * 2
+
+  // 计算每列的宽度（3列模式）
+  let columnCount = 3
+  if (window.innerWidth <= 600) columnCount = 1
+  else if (window.innerWidth <= 1000) columnCount = 2
+
+  const columnWidth = (containerWidth - gridGap * (columnCount - 1)) / columnCount
 
   items.forEach(item=>{
     const node = template.content.cloneNode(true)
@@ -457,13 +545,20 @@ function renderGrid(){
       if(commentBtn) commentBtn.addEventListener('click', ()=> openCommentModalFor(item))
     }catch(e){}
 
-    // Use data-src + loading=lazy attribute to defer load; IntersectionObserver will set src
+    // Use data-src + loading=lazy attribute to defer load
     img.dataset.src = item.url
     img.alt = item.title
     img.loading = 'lazy'
     img.addEventListener('error', ()=>{img.style.background = '#f2f2f2'})
-    // click to preview
-    img.addEventListener('click', ()=> showPreview(item.url, item.title))
+
+    // 异步加载图片尺寸并设置卡片高度
+    loadImageSize(item.url).then(size => {
+      const cardHeight = calculateCardHeight(size.width, size.height, columnWidth)
+      tile.style.height = cardHeight + 'px'
+    })
+
+    // 点击打开全屏预览（小红书风格）
+    img.addEventListener('click', (e) => showPreview(item, e))
 
     grid.appendChild(node)
     // Observe last appended image
@@ -1008,7 +1103,50 @@ async function saveImage(item){
     URL.revokeObjectURL(url)
   }catch(err){
     // On iOS Safari, best action is to instruct user to long-press the image
-    alert('无法直接保存，请长按图片并选择“添加到照片”或使用分享功能。')
+    alert('无法直接保存，请长按图片并选择”添加到照片”或使用分享功能。')
+  }
+}
+
+// 预览窗口键盘导航
+window.addEventListener('keydown', (e) => {
+  if (!previewModal || previewModal.style.display === 'none') return
+
+  if (e.key === 'ArrowLeft') {
+    navigatePreview(-1)
+  } else if (e.key === 'ArrowRight') {
+    navigatePreview(1)
+  } else if (e.key === 'Escape') {
+    hidePreview()
+  }
+})
+
+// 触摸滑动支持
+let touchStartX = 0
+let touchEndX = 0
+
+if (previewModal) {
+  previewModal.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX
+  }, { passive: true })
+
+  previewModal.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX
+    handleSwipe()
+  }, { passive: true })
+}
+
+function handleSwipe() {
+  const swipeThreshold = 50
+  const diff = touchStartX - touchEndX
+
+  if (Math.abs(diff) > swipeThreshold) {
+    if (diff > 0) {
+      // 向左滑 -> 下一张
+      navigatePreview(1)
+    } else {
+      // 向右滑 -> 上一张
+      navigatePreview(-1)
+    }
   }
 }
 
