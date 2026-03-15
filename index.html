@@ -17,16 +17,34 @@
 </head>
 <body>
   <header class="app-header">
-    <h1>壁纸库</h1>
-    <div style="display:flex;gap:8px;align-items:center">
-      <div class="filters" id="filters"></div>
+    <div class="header-left">
+      <h1>壁纸库</h1>
+    </div>
+    <div class="header-center">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜索壁纸...">
+      </div>
+    </div>
+    <div class="header-right">
       <button id="installBtn" class="button" style="display:none">添加到主屏幕</button>
-      <button id="userBtn" class="button">个人中心</button>
+      <button id="userBtn" class="button user-btn">
+        <span class="user-avatar-small" id="headerAvatar"></span>
+        <span id="headerNickname">个人中心</span>
+      </button>
     </div>
   </header>
 
+  <!-- 分类标签栏 -->
+  <div class="category-tabs">
+    <button class="category-tab active" data-category="全部">全部</button>
+    <button class="category-tab" data-category="书法">书法福</button>
+    <button class="category-tab" data-category="熊猫">熊猫</button>
+    <button class="category-tab" data-category="创意">物体福</button>
+    <button class="category-tab" data-category="上传">我的上传</button>
+  </div>
+
   <main>
-    <div id="pullToRefresh" class="pull-area">下拉刷新</div>
     <section id="grid" class="grid" aria-live="polite"></section>
   </main>
 
@@ -38,13 +56,16 @@
       <div class="tile-meta">
         <div class="title"></div>
         <div class="category"></div>
-        <div style="display:flex;gap:6px;align-items:center;">
+        <div class="tile-actions">
           <button class="edit-btn button">编辑</button>
           <button class="save-btn button">保存</button>
-          <button class="like-btn button">♥</button>
-          <span class="like-count" style="font-size:13px;color:#666;min-width:28px;display:inline-block;text-align:center">0</span>
-          <button class="comment-btn button">评论</button>
-          <span class="comment-count" style="font-size:13px;color:#666;min-width:24px;display:inline-block;text-align:center">0</span>
+          <button class="collect-btn button" title="收藏">☆</button>
+          <span class="collect-count">0</span>
+          <button class="like-btn button" title="点赞">♡</button>
+          <span class="like-count">0</span>
+          <button class="comment-btn button" title="评论">💬</button>
+          <span class="comment-count">0</span>
+          <button class="share-btn button" title="分享">↗</button>
         </div>
       </div>
     </article>
@@ -340,12 +361,15 @@
     </div>
   </div>
 
-  <!-- Image Preview Modal -->
+  <!-- Image Preview Modal - 小红书风格 -->
   <div id="previewModal" class="preview-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1100;">
-    <div class="preview-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.75);"></div>
-    <div class="preview-panel" style="position:relative;margin:40px auto;max-width:90%;max-height:90%;display:flex;align-items:center;justify-content:center;z-index:1;">
-      <button id="previewClose" class="button" style="position:absolute;right:8px;top:8px;z-index:2;">关闭</button>
-      <img id="previewImage" src="" alt="预览" style="max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,0.5);" />
+    <div class="preview-backdrop" style="position:absolute;inset:0;background:#000;"></div>
+    <div class="preview-panel" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+      <button id="previewClose" class="preview-close">&times;</button>
+      <button id="prevBtn" class="preview-nav prev" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);">&#8249;</button>
+      <button id="nextBtn" class="preview-nav next" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);">&#8250;</button>
+      <img id="previewImage" src="" alt="预览" style="max-width:100%;max-height:100%;object-fit:contain;" />
+      <div id="previewTitle" style="position:absolute;bottom:60px;color:#fff;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,0.5);z-index:10;"></div>
     </div>
   </div>
 
@@ -369,37 +393,111 @@
     </div>
   </div>
 
-  <!-- User Profile / Upload Modal -->
+  <!-- User Profile / Upload Modal - 个人中心 -->
   <div id="userModal" class="user-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1200;">
     <div class="user-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);"></div>
-    <div class="user-panel" style="position:relative;margin:40px auto;max-width:900px;background:#fff;border-radius:8px;padding:12px;z-index:1;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="font-weight:600">个人中心</div>
+    <div class="user-panel" style="position:relative;margin:40px auto;max-width:900px;max-height:90vh;background:#fff;border-radius:12px;padding:20px;z-index:1;overflow:auto;">
+      <!-- 关闭按钮 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div style="font-weight:600;font-size:18px;">个人中心</div>
         <div>
           <button id="userClose" class="button">关闭</button>
         </div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;">
-        <div style="flex:1;min-width:300px;max-height:60vh;overflow:auto;border:1px solid #eee;padding:12px;">
-          <div style="margin-bottom:8px;">
-            <label style="display:block;font-weight:600;margin-bottom:6px;">上传图片</label>
-            <input id="uploadInput" type="file" accept="image/*" multiple />
-            <div style="margin-top:8px;color:#666;font-size:13px">支持多图上传，会压缩并存入本地（仅用于演示）。</div>
-          </div>
-          <div>
-            <div style="font-weight:600;margin-bottom:6px;">我的上传</div>
-            <div id="uploadGallery" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
-          </div>
+
+      <!-- 用户信息头部 -->
+      <div class="profile-header" style="display:flex;gap:20px;align-items:center;padding-bottom:20px;border-bottom:1px solid #eee;margin-bottom:20px;">
+        <!-- 头像 -->
+        <div style="position:relative;">
+          <img id="userAvatarPreview" src="icons/icon.svg" alt="头像" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #eee;">
+          <label for="userAvatarInput" class="avatar-edit-btn" style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:#0b74ff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#fff;">
+            📷
+          </label>
+          <input id="userAvatarInput" type="file" accept="image/*" style="display:none;">
         </div>
-        <div style="width:320px;max-height:60vh;overflow:auto;">
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="font-weight:600">说明</div>
-            <div style="color:#666;font-size:13px">上传的图片会添加到壁纸库顶部，并保存在本地存储用于页面刷新时恢复。若需长期存储请接入服务器或 IndexedDB。</div>
+        <!-- 用户名和简介 -->
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <input id="userNickname" placeholder="设置昵称" style="font-size:18px;font-weight:600;border:none;outline:none;width:150px;background:transparent;">
+            <span class="verified-badge" style="display:none;font-size:14px;">✓</span>
           </div>
+          <textarea id="userBio" placeholder="添加简介，让大家认识你" style="width:100%;min-height:40px;padding:6px;border:1px solid #eee;border-radius:6px;resize:none;font-size:13px;color:#666;outline:none;" maxlength="50"></textarea>
         </div>
       </div>
+
+      <!-- 数据统计 -->
+      <div class="profile-stats" style="display:flex;gap:30px;justify-content:center;padding:16px 0;border-bottom:1px solid #eee;margin-bottom:20px;">
+        <div class="stat-item" style="text-align:center;">
+          <div id="statLikes" style="font-size:20px;font-weight:600;">0</div>
+          <div style="font-size:12px;color:#999;">获赞</div>
+        </div>
+        <div class="stat-item" style="text-align:center;">
+          <div id="statCollects" style="font-size:20px;font-weight:600;">0</div>
+          <div style="font-size:12px;color:#999;">收藏</div>
+        </div>
+        <div class="stat-item" style="text-align:center;">
+          <div id="statUploads" style="font-size:20px;font-weight:600;">0</div>
+          <div style="font-size:12px;color:#999;">上传</div>
+        </div>
+        <div class="stat-item" style="text-align:center;">
+          <div id="statComments" style="font-size:20px;font-weight:600;">0</div>
+          <div style="font-size:12px;color:#999;">评论</div>
+        </div>
+      </div>
+
+      <!-- 功能列表 -->
+      <div class="profile-menu" style="margin-bottom:20px;">
+        <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:18px;">📤</span>
+          <div style="flex:1;">
+            <div style="font-weight:500;">我的上传</div>
+            <div style="font-size:12px;color:#999;">管理已上传的壁纸</div>
+          </div>
+          <span style="color:#999;">›</span>
+        </div>
+        <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:18px;">❤️</span>
+          <div style="flex:1;">
+            <div style="font-weight:500;">我的点赞</div>
+            <div style="font-size:12px;color:#999;">查看点赞过的图片</div>
+          </div>
+          <span style="color:#999;">›</span>
+        </div>
+        <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:18px;">💬</span>
+          <div style="flex:1;">
+            <div style="font-weight:500;">我的评论</div>
+            <div style="font-size:12px;color:#999;">查看我的评论</div>
+          </div>
+          <span style="color:#999;">›</span>
+        </div>
+        <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:18px;">⭐</span>
+          <div style="flex:1;">
+            <div style="font-weight:500;">我的收藏</div>
+            <div style="font-size:12px;color:#999;">收藏的图片</div>
+          </div>
+          <span style="color:#999;">›</span>
+        </div>
+      </div>
+
+      <!-- 保存按钮 -->
+      <button id="userSaveProfile" class="button" style="width:100%;padding:12px;background:#0b74ff;border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">保存修改</button>
     </div>
   </div>
+
+  <!-- 内容列表弹窗（我的上传/点赞/收藏等） -->
+  <div id="contentModal" class="content-modal" style="display:none;position:fixed;inset:0;z-index:1300;">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);" onclick="hideContentModal()"></div>
+    <div style="position:relative;margin:60px auto;max-width:500px;max-height:70vh;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #eee;">
+        <div id="contentModalTitle" style="font-weight:600;font-size:16px;">标题</div>
+        <button onclick="hideContentModal()" style="background:none;border:none;font-size:20px;cursor:pointer;">&times;</button>
+      </div>
+      <div id="contentList" style="flex:1;overflow:auto;padding:12px;"></div>
+    </div>
+  </div>
+
   <script src="app.js" type="module"></script>
 </body>
 </html>
