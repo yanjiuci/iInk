@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>壁纸网格展示</title>
+  <title>Wallpaper Gallery</title>
   <meta name="theme-color" content="#0b74ff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon.svg">
-  <!-- Google Fonts - 中文字体库 -->
+  <!-- Google Fonts - Chinese font library -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Liu+Jian+Mao+Cao&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@100..900&family=Noto+Serif+SC:wght@200..900&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
@@ -18,30 +18,30 @@
 <body>
   <header class="app-header">
     <div class="header-left">
-      <h1>壁纸库</h1>
+      <h1>Wallpapers</h1>
     </div>
     <div class="header-center">
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="搜索壁纸...">
+        <input type="text" id="searchInput" placeholder="Search wallpapers...">
       </div>
     </div>
     <div class="header-right">
-      <button id="installBtn" class="button" style="display:none">添加到主屏幕</button>
+      <button id="installBtn" class="button" style="display:none">Add to Home Screen</button>
       <button id="userBtn" class="button user-btn">
         <span class="user-avatar-small" id="headerAvatar"></span>
-        <span id="headerNickname">个人中心</span>
+        <span id="headerNickname">Profile</span>
       </button>
     </div>
   </header>
 
-  <!-- 分类标签栏 -->
+  <!-- Category tabs -->
   <div class="category-tabs">
-    <button class="category-tab active" data-category="全部">全部</button>
-    <button class="category-tab" data-category="书法">书法福</button>
-    <button class="category-tab" data-category="熊猫">熊猫</button>
-    <button class="category-tab" data-category="创意">物体福</button>
-    <button class="category-tab" data-category="上传">我的上传</button>
+    <button class="category-tab active" data-category="All">All</button>
+    <button class="category-tab" data-category="Calligraphy">Calligraphy</button>
+    <button class="category-tab" data-category="Panda">Panda</button>
+    <button class="category-tab" data-category="Creative">Creative</button>
+    <button class="category-tab" data-category="Upload">My Uploads</button>
   </div>
 
   <main>
@@ -51,244 +51,244 @@
   <template id="tile-template">
     <article class="tile">
       <div class="tile-media">
-        <img alt="壁纸" class="tile-img" loading="lazy">
+        <img alt="Wallpaper" class="tile-img" loading="lazy">
       </div>
       <div class="tile-meta">
         <div class="title"></div>
         <div class="category"></div>
         <div class="tile-actions">
-          <button class="edit-btn button">编辑</button>
-          <button class="save-btn button">保存</button>
-          <button class="collect-btn button" title="收藏">☆</button>
+          <button class="edit-btn button">Edit</button>
+          <button class="save-btn button">Save</button>
+          <button class="collect-btn button" title="Collect">☆</button>
           <span class="collect-count">0</span>
-          <button class="like-btn button" title="点赞">♡</button>
+          <button class="like-btn button" title="Like">♡</button>
           <span class="like-count">0</span>
-          <button class="comment-btn button" title="评论">💬</button>
+          <button class="comment-btn button" title="Comment">💬</button>
           <span class="comment-count">0</span>
-          <button class="share-btn button" title="分享">↗</button>
+          <button class="share-btn button" title="Share">↗</button>
         </div>
       </div>
     </article>
   </template>
 
-  <!-- Image Editor Modal - 专业图片编辑器 -->
+  <!-- Image Editor Modal -->
   <div id="editorModal" class="editor-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1000;">
     <div class="editor-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.85);"></div>
-    
+
     <div class="editor-container" style="position:relative;height:100vh;display:flex;flex-direction:column;">
-      <!-- 顶部工具栏 -->
+      <!-- Top toolbar -->
       <div class="editor-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#1a1a1a;color:#fff;border-bottom:1px solid #333;">
         <div style="display:flex;gap:16px;align-items:center;">
           <button id="editorClose" class="toolbar-btn" style="background:none;border:none;color:#fff;cursor:pointer;font-size:20px;">✕</button>
-          <span style="font-weight:600;font-size:16px;">图片编辑器</span>
+          <span style="font-weight:600;font-size:16px;">Image Editor</span>
         </div>
         <div style="display:flex;gap:8px;">
-          <button id="editorUndo" class="toolbar-btn" title="撤销" style="padding:8px 12px;background:#333;border:none;border-radius:6px;color:#fff;cursor:pointer;">↩ 撤销</button>
-          <button id="editorRedo" class="toolbar-btn" title="重做" style="padding:8px 12px;background:#333;border:none;border-radius:6px;color:#fff;cursor:pointer;">↪ 重做</button>
-          <button id="editorReset" class="toolbar-btn" title="重置" style="padding:8px 12px;background:#333;border:none;border-radius:6px;color:#fff;cursor:pointer;">⟲ 重置</button>
-          <button id="editorSaveBtn" class="toolbar-btn" style="padding:8px 20px;background:#0b74ff;border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;">保存</button>
-          <button id="editorExportBtn" class="toolbar-btn" style="padding:8px 20px;background:#28a745;border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;">导出</button>
+          <button id="editorUndo" class="toolbar-btn" title="Undo" style="padding:8px 12px;background:#333;border:none;border-radius:6px;color:#fff;cursor:pointer;">↩ Undo</button>
+          <button id="editorRedo" class="toolbar-btn" title="Redo" style="padding:8px 12px;background:#333;border:none;border-radius:6px;color:#fff;cursor:pointer;">↪ Redo</button>
+          <button id="editorReset" class="toolbar-btn" title="Reset" style="padding:8px 12px;background:#333;border:none;border-radius:6px;color:#fff;cursor:pointer;">⟲ Reset</button>
+          <button id="editorSaveBtn" class="toolbar-btn" style="padding:8px 20px;background:#0b74ff;border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;">Save</button>
+          <button id="editorExportBtn" class="toolbar-btn" style="padding:8px 20px;background:#28a745;border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;">Export</button>
         </div>
       </div>
 
-      <!-- 主编辑区域 -->
+      <!-- Main editor area -->
       <div style="flex:1;display:flex;overflow:hidden;">
-        <!-- 左侧工具栏 -->
+        <!-- Left toolbar -->
         <div class="editor-sidebar-left" style="width:60px;background:#1a1a1a;border-right:1px solid #333;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:8px;">
-          <button class="tool-btn active" data-tool="adjust" title="调节" style="width:44px;height:44px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:18px;">⚡</button>
-          <button class="tool-btn" data-tool="filter" title="滤镜" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">🎨</button>
-          <button class="tool-btn" data-tool="crop" title="裁剪旋转" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">✂️</button>
-          <button class="tool-btn" data-tool="text" title="文字" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">T</button>
-          <button class="tool-btn" data-tool="sticker" title="贴纸" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">😊</button>
+          <button class="tool-btn active" data-tool="adjust" title="Adjust" style="width:44px;height:44px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:18px;">⚡</button>
+          <button class="tool-btn" data-tool="filter" title="Filters" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">🎨</button>
+          <button class="tool-btn" data-tool="crop" title="Crop & Rotate" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">✂️</button>
+          <button class="tool-btn" data-tool="text" title="Text" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">T</button>
+          <button class="tool-btn" data-tool="sticker" title="Stickers" style="width:44px;height:44px;background:transparent;border:none;border-radius:8px;color:#999;cursor:pointer;font-size:18px;">😊</button>
         </div>
 
-        <!-- 画布区域 -->
+        <!-- Canvas Area -->
         <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#0d0d0d;padding:20px;overflow:auto;">
           <div id="editorContainer" style="position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.5);"></div>
         </div>
 
-        <!-- 右侧面板 -->
+        <!-- Right panel -->
         <div class="editor-sidebar-right" style="width:320px;background:#1a1a1a;border-left:1px solid #333;overflow-y:auto;">
-          
-          <!-- 调节面板 -->
+
+          <!-- Adjust panel -->
           <div id="adjustPanel" class="tool-panel" style="padding:16px;">
-            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">基础调节</div>
-            
+            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">Basic Adjustments</div>
+
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>亮度</span><span id="val-brightness">100%</span>
+                <span>Brightness</span><span id="val-brightness">100%</span>
               </label>
               <input id="slider-brightness" type="range" min="0" max="2" step="0.01" value="1" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>对比度</span><span id="val-contrast">100%</span>
+                <span>Contrast</span><span id="val-contrast">100%</span>
               </label>
               <input id="slider-contrast" type="range" min="0" max="2" step="0.01" value="1" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>饱和度</span><span id="val-saturate">100%</span>
+                <span>Saturation</span><span id="val-saturate">100%</span>
               </label>
               <input id="slider-saturate" type="range" min="0" max="3" step="0.01" value="1" style="width:100%;">
             </div>
 
-            <div style="font-weight:600;color:#fff;margin:20px 0 16px;font-size:14px;">高级调节</div>
+            <div style="font-weight:600;color:#fff;margin:20px 0 16px;font-size:14px;">Advanced Adjustments</div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>色温</span><span id="val-warmth">0</span>
+                <span>Warmth</span><span id="val-warmth">0</span>
               </label>
               <input id="slider-warmth" type="range" min="-1" max="1" step="0.01" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>色调</span><span id="val-tint">0</span>
+                <span>Tint</span><span id="val-tint">0</span>
               </label>
               <input id="slider-tint" type="range" min="-1" max="1" step="0.01" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>自然饱和度</span><span id="val-vibrance">0</span>
+                <span>Vibrance</span><span id="val-vibrance">0</span>
               </label>
               <input id="slider-vibrance" type="range" min="-1" max="1" step="0.01" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>高光</span><span id="val-highlights">0</span>
+                <span>Highlights</span><span id="val-highlights">0</span>
               </label>
               <input id="slider-highlights" type="range" min="-1" max="1" step="0.01" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>阴影</span><span id="val-shadows">0</span>
+                <span>Shadows</span><span id="val-shadows">0</span>
               </label>
               <input id="slider-shadows" type="range" min="-1" max="1" step="0.01" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>暗角</span><span id="val-vignette">0</span>
+                <span>Vignette</span><span id="val-vignette">0</span>
               </label>
               <input id="slider-vignette" type="range" min="0" max="1" step="0.01" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>模糊</span><span id="val-blur">0</span>
+                <span>Blur</span><span id="val-blur">0</span>
               </label>
               <input id="slider-blur" type="range" min="0" max="20" step="0.5" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>色相</span><span id="val-hue">0°</span>
+                <span>Hue</span><span id="val-hue">0°</span>
               </label>
               <input id="slider-hue" type="range" min="-180" max="180" step="1" value="0" style="width:100%;">
             </div>
 
             <div class="control-group" style="margin-bottom:16px;">
               <label style="display:flex;justify-content:space-between;color:#ccc;font-size:12px;margin-bottom:6px;">
-                <span>透明度</span><span id="val-opacity">100%</span>
+                <span>Opacity</span><span id="val-opacity">100%</span>
               </label>
               <input id="slider-opacity" type="range" min="0" max="1" step="0.01" value="1" style="width:100%;">
             </div>
           </div>
 
-          <!-- 滤镜面板 -->
+          <!-- Filter panel -->
           <div id="filterPanel" class="tool-panel" style="padding:16px;display:none;">
-            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">滤镜预设</div>
+            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">Filter Presets</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-              <button class="filter-btn" data-filter="none" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">原图</button>
-              <button class="filter-btn" data-filter="beauty" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">美颜</button>
-              <button class="filter-btn" data-filter="portrait" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">人像</button>
-              <button class="filter-btn" data-filter="vivid" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">鲜艳</button>
-              <button class="filter-btn" data-filter="warm" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">暖色</button>
-              <button class="filter-btn" data-filter="cool" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">冷色</button>
-              <button class="filter-btn" data-filter="vintage" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">复古</button>
-              <button class="filter-btn" data-filter="retro" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">怀旧</button>
-              <button class="filter-btn" data-filter="film" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">胶片</button>
-              <button class="filter-btn" data-filter="landscape" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">风景</button>
-              <button class="filter-btn" data-filter="nature" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">自然</button>
-              <button class="filter-btn" data-filter="sunset" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">日落</button>
-              <button class="filter-btn" data-filter="noir" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">黑白</button>
-              <button class="filter-btn" data-filter="dramatic" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">戏剧</button>
-              <button class="filter-btn" data-filter="bw" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">灰度</button>
-              <button class="filter-btn" data-filter="food" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">美食</button>
-              <button class="filter-btn" data-filter="night" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">夜景</button>
-              <button class="filter-btn" data-filter="cyberpunk" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">赛博</button>
-              <button class="filter-btn" data-filter="moody" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;"> Moody</button>
-              <button class="filter-btn" data-filter="fade" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">褪色</button>
-              <button class="filter-btn" data-filter="sepia" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;"> sepia</button>
-              <button class="filter-btn" data-filter="grayscale" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">黑白</button>
+              <button class="filter-btn" data-filter="none" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Original</button>
+              <button class="filter-btn" data-filter="beauty" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Beauty</button>
+              <button class="filter-btn" data-filter="portrait" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Portrait</button>
+              <button class="filter-btn" data-filter="vivid" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Vivid</button>
+              <button class="filter-btn" data-filter="warm" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Warm</button>
+              <button class="filter-btn" data-filter="cool" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Cool</button>
+              <button class="filter-btn" data-filter="vintage" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Vintage</button>
+              <button class="filter-btn" data-filter="retro" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Retro</button>
+              <button class="filter-btn" data-filter="film" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Film</button>
+              <button class="filter-btn" data-filter="landscape" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Landscape</button>
+              <button class="filter-btn" data-filter="nature" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Nature</button>
+              <button class="filter-btn" data-filter="sunset" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Sunset</button>
+              <button class="filter-btn" data-filter="noir" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Noir</button>
+              <button class="filter-btn" data-filter="dramatic" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Dramatic</button>
+              <button class="filter-btn" data-filter="bw" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">B&W</button>
+              <button class="filter-btn" data-filter="food" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Food</button>
+              <button class="filter-btn" data-filter="night" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Night</button>
+              <button class="filter-btn" data-filter="cyberpunk" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Cyber</button>
+              <button class="filter-btn" data-filter="moody" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Moody</button>
+              <button class="filter-btn" data-filter="fade" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Fade</button>
+              <button class="filter-btn" data-filter="sepia" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Sepia</button>
+              <button class="filter-btn" data-filter="grayscale" style="padding:12px 8px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Gray</button>
             </div>
           </div>
 
-          <!-- 裁剪旋转面板 -->
+          <!-- Crop panel -->
           <div id="cropPanel" class="tool-panel" style="padding:16px;display:none;">
-            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">旋转与翻转</div>
+            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">Rotate & Flip</div>
             <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px;">
-              <button id="rotateLeft" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">↺ 左转90°</button>
-              <button id="rotateRight" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">↻ 右转90°</button>
-              <button id="flipH" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">⇄ 水平翻转</button>
-              <button id="flipV" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">⇅ 垂直翻转</button>
+              <button id="rotateLeft" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">↺ Rotate Left</button>
+              <button id="rotateRight" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">↻ Rotate Right</button>
+              <button id="flipH" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">⇄ Flip H</button>
+              <button id="flipV" class="action-btn" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;">⇅ Flip V</button>
             </div>
-            
-            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">快速裁剪</div>
+
+            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">Quick Crop</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
               <button class="crop-btn" data-ratio="1:1" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">1:1</button>
               <button class="crop-btn" data-ratio="4:3" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">4:3</button>
               <button class="crop-btn" data-ratio="16:9" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">16:9</button>
               <button class="crop-btn" data-ratio="3:4" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">3:4</button>
               <button class="crop-btn" data-ratio="9:16" style="padding:12px;background:#333;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">9:16</button>
-              <button class="crop-btn" data-ratio="free" style="padding:12px;background:#0b74ff;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">自由</button>
+              <button class="crop-btn" data-ratio="free" style="padding:12px;background:#0b74ff;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;">Free</button>
             </div>
           </div>
 
-          <!-- 文字面板 -->
+          <!-- Text panel -->
           <div id="textPanel" class="tool-panel" style="padding:16px;display:none;">
-            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">添加文字</div>
-            
+            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">Add Text</div>
+
             <div class="control-group" style="margin-bottom:12px;">
-              <input id="editorText" placeholder="输入文字..." style="width:100%;padding:10px;border:1px solid #444;border-radius:6px;background:#333;color:#fff;font-size:14px;">
+              <input id="editorText" placeholder="Enter text..." style="width:100%;padding:10px;border:1px solid #444;border-radius:6px;background:#333;color:#fff;font-size:14px;">
             </div>
 
             <div class="control-group" style="margin-bottom:12px;">
-              <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">字体</label>
+              <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">Font</label>
               <select id="editorFont" style="width:100%;padding:8px;border:1px solid #444;border-radius:6px;background:#333;color:#fff;font-size:13px;">
-                <option value="sans-serif">无衬线</option>
-                <option value="serif">衬线</option>
-                <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
-                <option value="'SimSun', serif">宋体</option>
-                <option value="'KaiTi', serif">楷体</option>
-                <option value="'SimHei', sans-serif">黑体</option>
-                <option value="'LiSu', serif">隶书</option>
-                <option value="'STXingkai', cursive">华文行楷</option>
-                <option value="'Ma Shan Zheng', cursive">马善政毛笔</option>
-                <option value="'Zhi Mang Xing', cursive">志莽行书</option>
-                <option value="'Long Cang', cursive">龙苍书法</option>
-                <option value="'Liu Jian Mao Cao', cursive">刘建草书</option>
-                <option value="'ZCOOL XiaoWei', serif">站酷小薇</option>
-                <option value="'ZCOOL KuaiLe', cursive">站酷快乐</option>
-                <option value="'Noto Serif SC', serif">思源宋体</option>
-                <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+                <option value="sans-serif">Sans Serif</option>
+                <option value="serif">Serif</option>
+                <option value="'Microsoft YaHei', sans-serif">Microsoft YaHei</option>
+                <option value="'SimSun', serif">SimSun</option>
+                <option value="'KaiTi', serif">KaiTi</option>
+                <option value="'SimHei', sans-serif">SimHei</option>
+                <option value="'LiSu', serif">LiSu</option>
+                <option value="'STXingkai', cursive">STXingkai</option>
+                <option value="'Ma Shan Zheng', cursive">Ma Shan Zheng</option>
+                <option value="'Zhi Mang Xing', cursive">Zhi Mang Xing</option>
+                <option value="'Long Cang', cursive">Long Cang</option>
+                <option value="'Liu Jian Mao Cao', cursive">Liu Jian Mao Cao</option>
+                <option value="'ZCOOL XiaoWei', serif">ZCOOL XiaoWei</option>
+                <option value="'ZCOOL KuaiLe', cursive">ZCOOL KuaiLe</option>
+                <option value="'Noto Serif SC', serif">Noto Serif SC</option>
+                <option value="'Noto Sans SC', sans-serif">Noto Sans SC</option>
               </select>
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;">
               <div class="control-group">
-                <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">字号</label>
+                <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">Font Size</label>
                 <input id="editorFontSize" type="range" min="12" max="200" value="48" style="width:100%;">
                 <span id="editorFontSizeValue" style="color:#999;font-size:11px;">48px</span>
               </div>
               <div class="control-group">
-                <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">颜色</label>
+                <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">Color</label>
                 <input id="editorTextColor" type="color" value="#ffffff" style="width:100%;height:36px;border:none;border-radius:6px;cursor:pointer;">
               </div>
             </div>
@@ -299,35 +299,35 @@
             </div>
 
             <div class="control-group" style="margin-bottom:12px;">
-              <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">旋转</label>
+              <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">Rotation</label>
               <input id="textRotation" type="range" min="-180" max="180" value="0" style="width:100%;">
               <span id="textRotationValue" style="color:#999;font-size:11px;">0°</span>
             </div>
 
             <div class="control-group" style="margin-bottom:12px;">
-              <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">透明度</label>
+              <label style="color:#ccc;font-size:12px;margin-bottom:6px;display:block;">Opacity</label>
               <input id="textOpacity" type="range" min="0" max="1" step="0.01" value="1" style="width:100%;">
             </div>
 
             <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
               <input type="checkbox" id="textStroke" checked style="width:16px;height:16px;">
-              <label for="textStroke" style="color:#ccc;font-size:12px;">描边</label>
+              <label for="textStroke" style="color:#ccc;font-size:12px;">Stroke</label>
               <input type="checkbox" id="textShadow" checked style="width:16px;height:16px;margin-left:16px;">
-              <label for="textShadow" style="color:#ccc;font-size:12px;">阴影</label>
+              <label for="textShadow" style="color:#ccc;font-size:12px;">Shadows</label>
             </div>
 
-            <button id="addTextBtn" class="button" style="width:100%;padding:12px;background:#0b74ff;border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;">添加文字</button>
+            <button id="addTextBtn" class="button" style="width:100%;padding:12px;background:#0b74ff;border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;">Add Text</button>
 
-            <!-- 图层管理 -->
+            <!-- Layers -->
             <div id="layerManager" style="margin-top:20px;border-top:1px solid #333;padding-top:16px;">
-              <div style="font-weight:600;color:#fff;margin-bottom:12px;font-size:14px;">图层管理</div>
+              <div style="font-weight:600;color:#fff;margin-bottom:12px;font-size:14px;">Layers</div>
               <div id="layerList" style="max-height:200px;overflow-y:auto;"></div>
             </div>
           </div>
 
-          <!-- 贴纸面板 -->
+          <!-- Sticker panel -->
           <div id="stickerPanel" class="tool-panel" style="padding:16px;display:none;">
-            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">贴纸</div>
+            <div style="font-weight:600;color:#fff;margin-bottom:16px;font-size:14px;">Stickers</div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
               <button class="sticker-btn" data-emoji="😀" style="padding:16px;background:#333;border:none;border-radius:8px;font-size:28px;cursor:pointer;">😀</button>
               <button class="sticker-btn" data-emoji="😂" style="padding:16px;background:#333;border:none;border-radius:8px;font-size:28px;cursor:pointer;">😂</button>
@@ -361,14 +361,14 @@
     </div>
   </div>
 
-  <!-- Image Preview Modal - 小红书风格 -->
+  <!-- Image Preview Modal - Fullscreen Style -->
   <div id="previewModal" class="preview-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1100;">
     <div class="preview-backdrop" style="position:absolute;inset:0;background:#000;"></div>
     <div class="preview-panel" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
       <button id="previewClose" class="preview-close">&times;</button>
       <button id="prevBtn" class="preview-nav prev" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);">&#8249;</button>
       <button id="nextBtn" class="preview-nav next" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);">&#8250;</button>
-      <img id="previewImage" src="" alt="预览" style="max-width:100%;max-height:100%;object-fit:contain;" />
+      <img id="previewImage" src="" alt="Preview" style="max-width:100%;max-height:100%;object-fit:contain;" />
       <div id="previewTitle" style="position:absolute;bottom:60px;color:#fff;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,0.5);z-index:10;"></div>
     </div>
   </div>
@@ -378,120 +378,120 @@
     <div class="comment-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);"></div>
     <div class="comment-panel" style="position:relative;margin:40px auto;max-width:720px;background:#fff;border-radius:8px;padding:12px;z-index:1;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="font-weight:600">评论</div>
+        <div style="font-weight:600">Comments</div>
         <div>
-          <button id="commentClose" class="button">关闭</button>
+          <button id="commentClose" class="button">Close</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div id="commentList" style="max-height:360px;overflow:auto;border:1px solid #eee;padding:8px;border-radius:6px;background:#fafafa"></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input id="commentInput" placeholder="输入评论..." style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px" />
-          <button id="commentAddBtn" class="button">添加</button>
+          <input id="commentInput" placeholder="Enter comment..." style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px" />
+          <button id="commentAddBtn" class="button">Add</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- User Profile / Upload Modal - 个人中心 -->
+  <!-- User Profile / Upload Modal -->
   <div id="userModal" class="user-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:1200;">
     <div class="user-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);"></div>
     <div class="user-panel" style="position:relative;margin:40px auto;max-width:900px;max-height:90vh;background:#fff;border-radius:12px;padding:20px;z-index:1;overflow:auto;">
-      <!-- 关闭按钮 -->
+      <!-- Close button -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div style="font-weight:600;font-size:18px;">个人中心</div>
+        <div style="font-weight:600;font-size:18px;">Profile</div>
         <div>
-          <button id="userClose" class="button">关闭</button>
+          <button id="userClose" class="button">Close</button>
         </div>
       </div>
 
-      <!-- 用户信息头部 -->
+      <!-- User info header -->
       <div class="profile-header" style="display:flex;gap:20px;align-items:center;padding-bottom:20px;border-bottom:1px solid #eee;margin-bottom:20px;">
-        <!-- 头像 -->
+        <!-- Avatar -->
         <div style="position:relative;">
-          <img id="userAvatarPreview" src="icons/icon.svg" alt="头像" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #eee;">
+          <img id="userAvatarPreview" src="icons/icon.svg" alt="Avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #eee;">
           <label for="userAvatarInput" class="avatar-edit-btn" style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:#0b74ff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#fff;">
             📷
           </label>
           <input id="userAvatarInput" type="file" accept="image/*" style="display:none;">
         </div>
-        <!-- 用户名和简介 -->
+        <!-- Username and bio -->
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <input id="userNickname" placeholder="设置昵称" style="font-size:18px;font-weight:600;border:none;outline:none;width:150px;background:transparent;">
+            <input id="userNickname" placeholder="Set nickname" style="font-size:18px;font-weight:600;border:none;outline:none;width:150px;background:transparent;">
             <span class="verified-badge" style="display:none;font-size:14px;">✓</span>
           </div>
-          <textarea id="userBio" placeholder="添加简介，让大家认识你" style="width:100%;min-height:40px;padding:6px;border:1px solid #eee;border-radius:6px;resize:none;font-size:13px;color:#666;outline:none;" maxlength="50"></textarea>
+          <textarea id="userBio" placeholder="Add a bio to introduce yourself" style="width:100%;min-height:40px;padding:6px;border:1px solid #eee;border-radius:6px;resize:none;font-size:13px;color:#666;outline:none;" maxlength="50"></textarea>
         </div>
       </div>
 
-      <!-- 数据统计 -->
+      <!-- Stats -->
       <div class="profile-stats" style="display:flex;gap:30px;justify-content:center;padding:16px 0;border-bottom:1px solid #eee;margin-bottom:20px;">
         <div class="stat-item" style="text-align:center;">
           <div id="statLikes" style="font-size:20px;font-weight:600;">0</div>
-          <div style="font-size:12px;color:#999;">获赞</div>
+          <div style="font-size:12px;color:#999;">Likes</div>
         </div>
         <div class="stat-item" style="text-align:center;">
           <div id="statCollects" style="font-size:20px;font-weight:600;">0</div>
-          <div style="font-size:12px;color:#999;">收藏</div>
+          <div style="font-size:12px;color:#999;">Collects</div>
         </div>
         <div class="stat-item" style="text-align:center;">
           <div id="statUploads" style="font-size:20px;font-weight:600;">0</div>
-          <div style="font-size:12px;color:#999;">上传</div>
+          <div style="font-size:12px;color:#999;">Uploads</div>
         </div>
         <div class="stat-item" style="text-align:center;">
           <div id="statComments" style="font-size:20px;font-weight:600;">0</div>
-          <div style="font-size:12px;color:#999;">评论</div>
+          <div style="font-size:12px;color:#999;">Comments</div>
         </div>
       </div>
 
-      <!-- 功能列表 -->
+      <!-- Menu -->
       <div class="profile-menu" style="margin-bottom:20px;">
         <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
           <span style="font-size:18px;">📤</span>
           <div style="flex:1;">
-            <div style="font-weight:500;">我的上传</div>
-            <div style="font-size:12px;color:#999;">管理已上传的壁纸</div>
+            <div style="font-weight:500;">My Uploads</div>
+            <div style="font-size:12px;color:#999;">Manage uploaded wallpapers</div>
           </div>
           <span style="color:#999;">›</span>
         </div>
         <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
           <span style="font-size:18px;">❤️</span>
           <div style="flex:1;">
-            <div style="font-weight:500;">我的点赞</div>
-            <div style="font-size:12px;color:#999;">查看点赞过的图片</div>
+            <div style="font-weight:500;">My Likes</div>
+            <div style="font-size:12px;color:#999;">View liked images</div>
           </div>
           <span style="color:#999;">›</span>
         </div>
         <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
           <span style="font-size:18px;">💬</span>
           <div style="flex:1;">
-            <div style="font-weight:500;">我的评论</div>
-            <div style="font-size:12px;color:#999;">查看我的评论</div>
+            <div style="font-weight:500;">My Comments</div>
+            <div style="font-size:12px;color:#999;">View my comments</div>
           </div>
           <span style="color:#999;">›</span>
         </div>
         <div class="menu-item" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:8px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
           <span style="font-size:18px;">⭐</span>
           <div style="flex:1;">
-            <div style="font-weight:500;">我的收藏</div>
-            <div style="font-size:12px;color:#999;">收藏的图片</div>
+            <div style="font-weight:500;">My Collections</div>
+            <div style="font-size:12px;color:#999;">Collected images</div>
           </div>
           <span style="color:#999;">›</span>
         </div>
       </div>
 
-      <!-- 保存按钮 -->
-      <button id="userSaveProfile" class="button" style="width:100%;padding:12px;background:#0b74ff;border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">保存修改</button>
+      <!-- Save button -->
+      <button id="userSaveProfile" class="button" style="width:100%;padding:12px;background:#0b74ff;border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">Save Changes</button>
     </div>
   </div>
 
-  <!-- 内容列表弹窗（我的上传/点赞/收藏等） -->
+  <!-- Content list modal -->
   <div id="contentModal" class="content-modal" style="display:none;position:fixed;inset:0;z-index:1300;">
     <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);" onclick="hideContentModal()"></div>
     <div style="position:relative;margin:60px auto;max-width:500px;max-height:70vh;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #eee;">
-        <div id="contentModalTitle" style="font-weight:600;font-size:16px;">标题</div>
+        <div id="contentModalTitle" style="font-weight:600;font-size:16px;">Title</div>
         <button onclick="hideContentModal()" style="background:none;border:none;font-size:20px;cursor:pointer;">&times;</button>
       </div>
       <div id="contentList" style="flex:1;overflow:auto;padding:12px;"></div>

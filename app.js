@@ -1,53 +1,53 @@
-// 本地壁纸数据 - 从壁纸文件夹加载
+// Local wallpaper data - loaded from wallpaper folders
 const demoData = (()=>{
   const arr = []
   let id = 1
-  
-  // 书法福系列
+
+  // Calligraphy series
   const calligraphyImages = ['13.jpg', '14.jpg', '15.jpg', '16.jpg', '17.jpg']
   calligraphyImages.forEach((filename, idx) => {
     arr.push({
       id: id++,
-      title: `书法福 ${idx + 1}`,
-      category: '书法',
+      title: `Calligraphy Fu ${idx + 1}`,
+      category: 'Calligraphy',
       url: `./书法福/${filename}`
     })
   })
-  
-  // 熊猫系列
+
+  // Panda series
   const pandaImages = [
-    { file: '冬.jpg', name: '熊猫-冬' },
-    { file: '夏.jpg', name: '熊猫-夏' },
-    { file: '新年.jpg', name: '熊猫-新年' },
-    { file: '春.jpg', name: '熊猫-春' },
-    { file: '秋.jpg', name: '熊猫-秋' }
+    { file: '冬.jpg', name: 'Panda-Winter' },
+    { file: '夏.jpg', name: 'Panda-Summer' },
+    { file: '新年.jpg', name: 'Panda-NewYear' },
+    { file: '春.jpg', name: 'Panda-Spring' },
+    { file: '秋.jpg', name: 'Panda-Autumn' }
   ]
   pandaImages.forEach((item) => {
     arr.push({
       id: id++,
       title: item.name,
-      category: '熊猫',
+      category: 'Panda',
       url: `./熊猫/${item.file}`
     })
   })
-  
-  // 物体福系列
+
+  // Creative series
   const objectImages = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg']
   objectImages.forEach((filename, idx) => {
     arr.push({
       id: id++,
-      title: `物体福 ${idx + 1}`,
-      category: '创意',
+      title: `Creative Fu ${idx + 1}`,
+      category: 'Creative',
       url: `./物体福/${filename}`
     })
   })
-  
+
   return arr
 })()
 
 const state = {
   items: demoData,
-  filter: '全部',
+  filter: 'All',
   searchQuery: ''
 }
 
@@ -158,7 +158,7 @@ function toggleLikeById(id){
   return interactions[key]
 }
 
-// 收藏功能
+// Collect function
 function toggleCollectById(id){
   const key = String(id)
   interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0 }
@@ -211,7 +211,7 @@ function renderCommentList(){
   if(!_commentTargetId) return
   const data = getInteraction(_commentTargetId)
   const arr = data.comments || []
-  if(arr.length === 0){ commentList.textContent = '暂无评论' ; return }
+  if(arr.length === 0){ commentList.textContent = 'No comments yet' ; return }
   arr.slice().reverse().forEach(c=>{
     const el = document.createElement('div')
     el.style.display = 'flex'
@@ -235,7 +235,7 @@ function renderCommentList(){
     const delBtn = document.createElement('button')
     delBtn.className = 'button'
     delBtn.style.fontSize = '12px'
-    delBtn.textContent = '删除'
+    delBtn.textContent = 'Delete'
     delBtn.addEventListener('click', ()=>{
       deleteCommentFromId(_commentTargetId, c.id)
       renderCommentList()
@@ -263,7 +263,7 @@ async function loadUserUploads(){
   if(!uploads || !uploads.length) return
   // prepend uploads to state items so they appear first
   uploads.reverse().forEach(u=>{
-    state.items.unshift({ id: u.id, title: u.title || '上传图片', category: '上传', url: u.dataUrl, uploaded: true })
+    state.items.unshift({ id: u.id, title: u.title || 'Uploaded Image', category: 'Upload', url: u.dataUrl, uploaded: true })
   })
 }
 
@@ -285,7 +285,7 @@ function renderUserProfile(){
   const p = getUserProfile()
   if(userNickname) userNickname.value = p.nickname || ''
   if(userAvatarPreview) userAvatarPreview.src = p.avatar || 'icons/icon.svg'
-  // 渲染简介
+  // Render Profile
   const userBio = document.getElementById('userBio')
   if(userBio) userBio.value = p.bio || ''
   updateUserButton(p)
@@ -299,7 +299,7 @@ async function handleAvatarSelected(ev){
     const compressed = await compressImage(f, { maxWidth: 512, quality: 0.9 })
     const dataUrl = await blobToDataURL(compressed)
     if(userAvatarPreview) userAvatarPreview.src = dataUrl
-  }catch(e){ console.error('处理头像失败', e) }
+  }catch(e){ console.error('Failed to process avatar', e) }
 }
 
 function handleSaveProfile(){
@@ -311,7 +311,7 @@ function handleSaveProfile(){
   saveUserProfile({ nickname: nick, avatar, bio })
   updateUserButton({ nickname: nick, avatar })
   updateProfileStats()
-  alert('已保存个人资料')
+  alert('Profile saved')
 }
 
 function updateUserButton(profile){
@@ -319,14 +319,14 @@ function updateUserButton(profile){
   const nick = (profile && profile.nickname) || ''
   const avatar = (profile && profile.avatar) || null
   if(avatar){
-    userBtn.innerHTML = `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px"> ${nick || '个人中心'}`
+    userBtn.innerHTML = `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px"> ${nick || 'Profile'}`
   } else if(nick){
     userBtn.innerHTML = `<span style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;display:inline-block;background:#ddd;text-align:center;line-height:20px;font-size:12px;">${nick.charAt(0)}</span> ${nick}`
   } else {
-    userBtn.innerHTML = '<span style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;display:inline-block;background:#ddd;text-align:center;line-height:20px;">👤</span> 个人中心'
+    userBtn.innerHTML = '<span style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;display:inline-block;background:#ddd;text-align:center;line-height:20px;">👤</span> Profile'
   }
 
-  // 更新头部导航的头像
+  // Update avatar in header navigation
   const headerAvatar = document.getElementById('headerAvatar')
   const headerNickname = document.getElementById('headerNickname')
   if(headerAvatar && avatar){
@@ -334,7 +334,7 @@ function updateUserButton(profile){
     headerAvatar.style.backgroundSize = 'cover'
     headerAvatar.textContent = ''
   } else if(headerNickname) {
-    headerNickname.textContent = nick || '个人中心'
+    headerNickname.textContent = nick || 'Profile'
   }
 }
 
@@ -349,7 +349,7 @@ function renderUploadGallery(){
   uploadGallery.innerHTML = ''
   const uploads = userStore.get(USER_UPLOADS_KEY, []) || []
   if(uploads.length === 0){
-    uploadGallery.textContent = '暂无上传'
+    uploadGallery.textContent = 'No uploads yet'
     return
   }
   uploads.slice().reverse().forEach(u=>{
@@ -362,10 +362,10 @@ function renderUploadGallery(){
     img.style.width = '100%'
     img.style.height = '80px'
     img.style.objectFit = 'cover'
-    img.alt = u.title || '上传'
+    img.alt = u.title || 'Upload'
     img.addEventListener('click', ()=>{
       // insert into main grid view (move to top)
-      state.items.unshift({ id: u.id, title: u.title || '上传图片', category: '上传', url: u.dataUrl, uploaded: true })
+      state.items.unshift({ id: u.id, title: u.title || 'Uploaded Image', category: 'Upload', url: u.dataUrl, uploaded: true })
       renderGrid()
     })
     const btnRow = document.createElement('div')
@@ -373,7 +373,7 @@ function renderUploadGallery(){
     btnRow.style.gap = '6px'
     const del = document.createElement('button')
     del.className = 'button'
-    del.textContent = '删除'
+    del.textContent = 'Delete'
     del.addEventListener('click', ()=>{
       // remove from storage and from state
       removeUploadRecord(u.id)
@@ -389,7 +389,7 @@ function renderUploadGallery(){
 }
 
 function renderFilters(){
-  const cats = Array.from(new Set(['全部', ...state.items.map(i=>i.category)]))
+  const cats = Array.from(new Set(['All', ...state.items.map(i=>i.category)]))
   filtersEl.innerHTML = ''
   cats.forEach(cat=>{
     const btn = document.createElement('button')
@@ -430,29 +430,29 @@ const previewClose = document.getElementById('previewClose')
 const previewBackdrop = previewModal && previewModal.querySelector('.preview-backdrop')
 const previewTitle = document.getElementById('previewTitle')
 
-// 当前预览的图片索引
+// Current preview image index
 let currentPreviewIndex = 0
 let previewItems = []
 
-// 显示预览（小红书风格）
+// Preview (fullscreen style)
 function showPreview(item, clickEvent) {
   if(!previewModal || !previewImage) return
 
-  // 获取当前筛选下的所有图片
-  const items = state.filter === '全部' ? state.items : state.items.filter(i=>i.category===state.filter)
+  // Get all images under current filter
+  const items = state.filter === 'All' ? state.items : state.items.filter(i=>i.category===state.filter)
   previewItems = items
   currentPreviewIndex = items.findIndex(i => i.id === item.id)
 
-  // 设置图片和标题
+  // Set image and title
   previewImage.src = item.url
   previewImage.alt = item.title
   if(previewTitle) previewTitle.textContent = item.title
 
-  // 显示模态框
+  // Show modal
   previewModal.style.display = 'block'
   previewModal.setAttribute('aria-hidden','false')
 
-  // 添加进入动画
+  // Add enter animation
   requestAnimationFrame(() => {
     previewModal.classList.add('preview-active')
   })
@@ -468,7 +468,7 @@ function hidePreview(){
   }, 300)
 }
 
-// 键盘导航
+// Keyboard navigation
 function navigatePreview(direction) {
   if (previewItems.length === 0) return
 
@@ -485,7 +485,7 @@ function navigatePreview(direction) {
 if(previewClose) previewClose.addEventListener('click', hidePreview)
 if(previewBackdrop) previewBackdrop.addEventListener('click', hidePreview)
 
-// 导航按钮
+// Navigation buttons
 const prevBtn = document.getElementById('prevBtn')
 const nextBtn = document.getElementById('nextBtn')
 if(prevBtn) prevBtn.addEventListener('click', () => navigatePreview(-1))
@@ -494,10 +494,10 @@ if(nextBtn) nextBtn.addEventListener('click', () => navigatePreview(1))
 function renderGrid(){
   clearGrid()
 
-  // 先按分类筛选，再按搜索关键词筛选
-  let items = state.filter === '全部' ? state.items : state.items.filter(i=>i.category===state.filter)
+  // Filter by category first, then by search keyword
+  let items = state.filter === 'All' ? state.items : state.items.filter(i=>i.category===state.filter)
 
-  // 搜索过滤
+  // Search filter
   if (state.searchQuery.trim()) {
     const query = state.searchQuery.toLowerCase().trim()
     items = items.filter(item =>
@@ -509,7 +509,7 @@ function renderGrid(){
   if(items.length === 0){
     const el = document.createElement('div')
     el.className = 'loading'
-    el.textContent = state.searchQuery ? '未找到匹配的壁纸' : '无可显示的壁纸'
+    el.textContent = state.searchQuery ? 'No matching wallpapers found' : 'No wallpapers to display'
     grid.appendChild(el)
     return
   }
@@ -551,7 +551,7 @@ function renderGrid(){
         if(collectBtn) { if(res.collected) { collectBtn.classList.add('active'); collectBtn.textContent = '★' } else { collectBtn.classList.remove('active'); collectBtn.textContent = '☆' } }
       })
       if(commentBtn) commentBtn.addEventListener('click', ()=> openCommentModalFor(item))
-      // 分享功能
+      // Share functionality
       if(shareBtn) shareBtn.addEventListener('click', ()=> shareImage(item))
     }catch(e){}
 
@@ -561,7 +561,7 @@ function renderGrid(){
     img.loading = 'lazy'
     img.addEventListener('error', ()=>{img.style.background = '#f2f2f2'})
 
-    // 点击打开全屏预览（小红书风格）
+    // Click to open fullscreen preview
     img.addEventListener('click', (e) => showPreview(item, e))
 
     grid.appendChild(node)
@@ -590,10 +590,10 @@ if(uploadInput) uploadInput.addEventListener('change', async (ev)=>{
       const dataUrl = await blobToDataURL(compressed)
       const id = `upload-${Date.now()}-${Math.floor(Math.random()*1000)}`
       // add to app state and persist
-      const item = { id, title: f.name, category: '上传', url: dataUrl, uploaded: true }
+      const item = { id, title: f.name, category: 'Upload', url: dataUrl, uploaded: true }
       state.items.unshift(item)
       persistUploadRecord({ id, title: f.name, dataUrl, date: Date.now() })
-    }catch(err){ console.error('上传处理失败', err) }
+    }catch(err){ console.error('Upload failed', err) }
   }
   renderGrid()
   renderUploadGallery()
@@ -654,8 +654,8 @@ async function openEditor(item){
     setupEditorEventHandlers()
     
   }catch(err){
-    console.error('加载图片到编辑器失败', err)
-    alert('无法加载图片到编辑器')
+    console.error('Failed to load image to editor', err)
+    alert('Failed to load image to editor')
     closeEditor()
   }
 }
@@ -818,7 +818,7 @@ function setupEditorEventHandlers(){
   if(editorSaveBtn) {
     editorSaveBtn.onclick = () => {
       const fname = `${currentItem.title.replace(/[^a-z0-9-_]/ig,'') || 'image'}-edited.png`
-      currentEditor.saveToLocal(fname).catch(() => alert('保存失败'))
+      currentEditor.saveToLocal(fname).catch(() => alert('Save failed'))
     }
   }
   
@@ -911,7 +911,7 @@ function updateLayerList(){
       item.style.background = '#0b74ff'
     }
     
-    const name = layer.type === 'text' ? `文字: ${layer.text.slice(0, 10)}${layer.text.length > 10 ? '...' : ''}` : '贴纸'
+    const name = layer.type === 'text' ? `Text: ${layer.text.slice(0, 10)}${layer.text.length > 10 ? '...' : ''}` : 'Sticker'
     item.innerHTML = `
       <span style="color:#fff;font-size:12px;">${name}</span>
       <div style="display:flex;gap:4px;">
@@ -982,19 +982,14 @@ function syncControlsFromEditor(){
 
 // initial render
 ; (async ()=>{
-  console.log('开始初始化...')
   await loadUserUploads()
-  console.log('用户上传加载完成')
   renderGrid()
-  console.log('网格渲染完成')
   initSearch()
   initCategoryTabs()
-  console.log('分类标签初始化完成')
   updateProfileStats()
-  console.log('统计更新完成')
 })()
 
-// 搜索功能初始化
+// Search functionality initialization
 function initSearch(){
   if(!searchInput) return
   searchInput.addEventListener('input', (e) => {
@@ -1003,53 +998,53 @@ function initSearch(){
   })
 }
 
-// 分类标签初始化
+// Category tabs initialization
 function initCategoryTabs(){
   const tabs = document.querySelectorAll('.category-tab')
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      // 更新激活状态
+      // Update active state
       tabs.forEach(t => t.classList.remove('active'))
       tab.classList.add('active')
 
-      // 更新筛选状态
+      // Update filter state
       const category = tab.dataset.category
       state.filter = category
       renderGrid()
     })
   })
 
-  // 菜单项点击事件
+  // Menu item click event
   const menuItems = document.querySelectorAll('.menu-item')
   menuItems.forEach(item => {
     item.addEventListener('click', () => {
       const text = item.querySelector('div').textContent
       hideUserModal()
 
-      if(text.includes('上传')){
-        // 显示我的上传
+      if(text.includes('Upload')){
+        // Show my Upload
         const uploads = userStore.get(USER_UPLOADS_KEY, []) || []
         const items = uploads.map(u => ({
           id: u.id,
-          title: u.title || '上传图片',
-          category: '上传',
+          title: u.title || 'Upload Image',
+          category: 'Upload',
           url: u.dataUrl
         }))
-        showContentModal('我的上传', items, '暂无上传')
-      } else if(text.includes('点赞')){
-        // 显示我点赞的图片
+        showContentModal('My Uploads', items, 'No uploads yet')
+      } else if(text.includes('Like')){
+        // Show my liked images
         const items = getLikedItems()
-        showContentModal('我的点赞', items, '还没有点赞任何图片')
-      } else if(text.includes('评论')){
-        // 显示我的评论
+        showContentModal('My Likes', items, 'No liked images yet')
+      } else if(text.includes('Comment')){
+        // Show my comments
         const comments = getMyComments()
         const modal = document.getElementById('contentModal')
         const modalTitle = document.getElementById('contentModalTitle')
         const contentList = document.getElementById('contentList')
 
-        modalTitle.textContent = '我的评论'
+        modalTitle.textContent = 'My Comments'
         if(comments.length === 0){
-          contentList.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">还没有评论过</div>'
+          contentList.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">No commented images yet</div>'
         } else {
           contentList.innerHTML = ''
           comments.forEach(c => {
@@ -1067,16 +1062,16 @@ function initCategoryTabs(){
           })
         }
         modal.style.display = 'block'
-      } else if(text.includes('收藏')){
-        // 显示我收藏的图片
+      } else if(text.includes('Collect')){
+        // Show my collected images
         const items = getCollectedItems()
-        showContentModal('我的收藏', items, '还没有收藏任何图片')
+        showContentModal('My Collection', items, 'No collected images yet')
       }
     })
   })
 }
 
-// 更新个人中心统计数据
+// Update Profile statistics
 function updateProfileStats(){
   const uploads = userStore.get(USER_UPLOADS_KEY, []) || []
   let totalLikes = 0
@@ -1085,7 +1080,7 @@ function updateProfileStats(){
   let likedCount = 0
   let collectedCount = 0
 
-  // 统计点赞、评论、收藏
+  // Count Likes, Comments, Collects
   Object.values(interactions).forEach(item => {
     totalLikes += (item.likes || 0)
     totalComments += (item.comments ? item.comments.length : 0)
@@ -1094,19 +1089,19 @@ function updateProfileStats(){
     if(item.collected) collectedCount++
   })
 
-  // 更新 DOM
+  // Update DOM
   const statLikes = document.getElementById('statLikes')
   const statUploads = document.getElementById('statUploads')
   const statComments = document.getElementById('statComments')
   const statCollects = document.getElementById('statCollects')
 
-  if(statLikes) statLikes.textContent = likedCount  // 显示点赞数
+  if(statLikes) statLikes.textContent = likedCount  // Show Likes count
   if(statUploads) statUploads.textContent = uploads.length
   if(statComments) statComments.textContent = totalComments
   if(statCollects) statCollects.textContent = collectedCount
 }
 
-// 获取我点赞过的图片
+// Get my liked images
 function getLikedItems(){
   return state.items.filter(item => {
     const info = interactions[String(item.id)]
@@ -1114,7 +1109,7 @@ function getLikedItems(){
   })
 }
 
-// 获取我收藏的图片
+// Get my collected images
 function getCollectedItems(){
   return state.items.filter(item => {
     const info = interactions[String(item.id)]
@@ -1122,7 +1117,7 @@ function getCollectedItems(){
   })
 }
 
-// 获取我的评论
+// Get my comments
 function getMyComments(){
   const comments = []
   Object.entries(interactions).forEach(([id, data]) => {
@@ -1131,7 +1126,7 @@ function getMyComments(){
         const item = state.items.find(i => String(i.id) === id)
         comments.push({
           itemId: id,
-          itemTitle: item ? item.title : '未知',
+          itemTitle: item ? item.title : 'Unknown',
           itemUrl: item ? item.url : '',
           ...c
         })
@@ -1141,7 +1136,7 @@ function getMyComments(){
   return comments
 }
 
-// 显示内容列表弹窗
+// Show content list modal
 function showContentModal(title, items, emptyMsg){
   const modal = document.getElementById('contentModal')
   const modalTitle = document.getElementById('contentModalTitle')
@@ -1225,11 +1220,11 @@ async function saveImage(item){
     URL.revokeObjectURL(url)
   }catch(err){
     // On iOS Safari, best action is to instruct user to long-press the image
-    alert('无法直接保存，请长按图片并选择”添加到照片”或使用分享功能。')
+    alert('Cannot save directly, please long press the image and select “Add to Photos” or use the share function.')
   }
 }
 
-// 分享功能
+// Share functionality
 async function shareImage(item){
   try{
     const resp = await fetch(item.url)
@@ -1240,20 +1235,20 @@ async function shareImage(item){
       await navigator.share({
         files: [file],
         title: item.title,
-        text: `来自壁纸库的${item.title}`
+        text: `From Wallpaper Gallery: ${item.title}`
       })
     } else {
-      // 复制图片链接到剪贴板
+      // Copy image link to clipboard
       const url = URL.createObjectURL(blob)
       await navigator.clipboard.writeText(item.url)
-      alert('图片链接已复制到剪贴板')
+      alert('Image link copied to clipboard')
     }
   }catch(err){
-    alert('分享失败，请重试')
+    alert('Share failed, please try again')
   }
 }
 
-// 预览窗口键盘导航
+// Preview window keyboard navigation
 window.addEventListener('keydown', (e) => {
   if (!previewModal || previewModal.style.display === 'none') return
 
@@ -1266,7 +1261,7 @@ window.addEventListener('keydown', (e) => {
   }
 })
 
-// 触摸滑动支持
+// Touch swipe support
 let touchStartX = 0
 let touchEndX = 0
 
@@ -1287,31 +1282,11 @@ function handleSwipe() {
 
   if (Math.abs(diff) > swipeThreshold) {
     if (diff > 0) {
-      // 向左滑 -> 下一张
+      // Swipe left -> next
       navigatePreview(1)
     } else {
-      // 向右滑 -> 上一张
+      // Swipe right -> previous
       navigatePreview(-1)
     }
   }
 }
-
-// --- Background Sync helper: queue a request and register sync ---
-async function queueForBackgroundSync(request){
-  if(!('serviceWorker' in navigator)) return
-  const reg = await navigator.serviceWorker.ready
-  // send message to service worker to store the request
-  const message = { action: 'queue-request', request }
-  try{
-    if(reg.active) reg.active.postMessage(message)
-    else if(navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage(message)
-  }catch(e){}
-
-  // register sync
-  try{
-    if('sync' in reg) await reg.sync.register('sync-requests')
-  }catch(e){}
-}
-
-// Example: when offline and user taps "保存" we could enqueue a sync
-// queueForBackgroundSync({ url: '/api/sync-favorite', method: 'POST', headers: { 'Content-Type': 'application/json' }, body: { id: 123 } })
