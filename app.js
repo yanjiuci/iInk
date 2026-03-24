@@ -145,11 +145,11 @@ let interactions = interactionStore.get(INTERACTIONS_KEY, {}) || {}
 
 function saveInteractions(){ interactionStore.set(INTERACTIONS_KEY, interactions) }
 
-function getInteraction(id){ return interactions[String(id)] || { liked: false, likes: 0, comments: [], collected: false, collects: 0 } }
+function getInteraction(id){ return interactions[String(id)] || { liked: false, likes: 0, comments: [], collected: false, collects: 0, downloads: 0 } }
 
 function toggleLikeById(id){
   const key = String(id)
-  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0 }
+  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0, downloads:0 }
   interactions[key].liked = !interactions[key].liked
   if(interactions[key].liked) interactions[key].likes = (interactions[key].likes||0) + 1
   else interactions[key].likes = Math.max(0, (interactions[key].likes||0) - 1)
@@ -161,7 +161,7 @@ function toggleLikeById(id){
 // 收藏功能
 function toggleCollectById(id){
   const key = String(id)
-  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0 }
+  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0, downloads:0 }
   interactions[key].collected = !interactions[key].collected
   if(interactions[key].collected) interactions[key].collects = (interactions[key].collects||0) + 1
   else interactions[key].collects = Math.max(0, (interactions[key].collects||0) - 1)
@@ -172,7 +172,7 @@ function toggleCollectById(id){
 
 function addCommentToId(id, text){
   const key = String(id)
-  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[] }
+  interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0, downloads:0 }
   const c = { id: `c-${Date.now()}-${Math.floor(Math.random()*1000)}`, text, date: Date.now() }
   interactions[key].comments.push(c)
   saveInteractions()
@@ -525,7 +525,7 @@ function renderGrid(){
     const editBtn = node.querySelector('.edit-btn')
     if(editBtn) editBtn.addEventListener('click', ()=>openEditor(item))
 
-    // like/comment/collect/share UI
+    // like/comment/collect/share/download UI
     const likeBtn = node.querySelector('.like-btn')
     const likeCount = node.querySelector('.like-count')
     const commentCount = node.querySelector('.comment-count')
@@ -533,11 +533,14 @@ function renderGrid(){
     const collectBtn = node.querySelector('.collect-btn')
     const collectCount = node.querySelector('.collect-count')
     const shareBtn = node.querySelector('.share-btn')
+    const downloadBtn = node.querySelector('.download-btn')
+    const downloadCount = node.querySelector('.download-count')
     try{
       const info = getInteraction(item.id)
       if(likeCount) likeCount.textContent = info.likes || 0
       if(commentCount) commentCount.textContent = (info.comments && info.comments.length) || 0
       if(collectCount) collectCount.textContent = info.collects || 0
+      if(downloadCount) downloadCount.textContent = info.downloads || 0
       if(likeBtn) { if(info.liked) { likeBtn.classList.add('active'); likeBtn.textContent = '♥' } else { likeBtn.textContent = '♡' } }
       if(collectBtn) { if(info.collected) { collectBtn.classList.add('active'); collectBtn.textContent = '★' } else { collectBtn.textContent = '☆' } }
       if(likeBtn) likeBtn.addEventListener('click', ()=>{
@@ -553,6 +556,8 @@ function renderGrid(){
       if(commentBtn) commentBtn.addEventListener('click', ()=> openCommentModalFor(item))
       // 分享功能
       if(shareBtn) shareBtn.addEventListener('click', ()=> shareImage(item))
+      // 下载功能
+      if(downloadBtn) downloadBtn.addEventListener('click', ()=> saveImage(item))
     }catch(e){}
 
     // Use data-src + loading=lazy attribute to defer load
@@ -1207,6 +1212,13 @@ async function saveImage(item){
     const resp = await fetch(item.url)
     const blob = await resp.blob()
     const file = new File([blob], `${item.title}.jpg`, {type: blob.type})
+
+    // 增加下载量计数
+    const key = String(item.id)
+    interactions[key] = interactions[key] || { liked:false, likes:0, comments:[], collected:false, collects:0, downloads:0 }
+    interactions[key].downloads = (interactions[key].downloads||0) + 1
+    saveInteractions()
+    renderGrid()
 
     // Prefer Web Share API with files (lets user save to Photos on iOS via share sheet)
     if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
