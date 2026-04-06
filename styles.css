@@ -14,16 +14,16 @@ body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#f5f5f5;colo
 .header-center{flex:1;max-width:400px;}
 .header-right{display:flex;gap:8px;align-items:center;}
 
-/* 搜索框 */
+/* Search box */
 .search-box{display:flex;align-items:center;background:#f5f5f5;border-radius:20px;padding:8px 14px;gap:8px;}
 .search-box input{border:none;background:transparent;outline:none;flex:1;font-size:14px;min-width:120px;}
 .search-icon{font-size:14px;}
 
-/* 用户按钮 */
+/* User button */
 .user-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;white-space:nowrap;border:1px solid #eee;}
 .user-avatar-small{width:24px;height:24px;border-radius:50%;background:#f0f0f0;display:inline-block;background-size:cover;background-position:center;text-align:center;line-height:24px;font-size:12px;color:#999;}
 
-/* 分类标签栏 */
+/* Category tabs */
 .category-tabs{display:flex;gap:8px;padding:12px 16px;background:#fff;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
 .category-tabs::-webkit-scrollbar{display:none;}
 .category-tab{padding:8px 16px;border:none;background:#f5f5f5;border-radius:20px;font-size:13px;color:#666;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
@@ -66,7 +66,7 @@ main{padding:12px}
 /* Preview modal styles */
 .preview-modal{display:none}
 .preview-panel{background:transparent}
-/* 小红书风格预览 */
+/* Fullscreen preview */
 .preview-modal .preview-backdrop {
   cursor: pointer;
   background: #000;
@@ -130,7 +130,7 @@ main{padding:12px}
   background: rgba(255,255,255,0.3);
 }
 
-/* 导航箭头 */
+/* Navigation arrows */
 .preview-nav {
   position: absolute;
   top: 50%;
@@ -161,11 +161,11 @@ main{padding:12px}
 #uploadGallery img{border-radius:6px}
 #uploadGallery .button{font-size:12px;padding:4px 6px}
 
-/* 用户头像 */
+/* User avatar */
 #userAvatarPreview{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #eee}
 #userAvatarInput{width:100%}
 
-/* 个人中心弹窗样式 */
+/* Profile modal styles */
 .user-modal .user-panel{background:#fff;border-radius:12px;}
 .user-modal .profile-header{border-bottom:1px solid #eee;padding-bottom:20px;}
 .user-modal .profile-stats{justify-content:center;gap:40px;}
