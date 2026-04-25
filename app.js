@@ -76,6 +76,10 @@ const commentList = document.getElementById('commentList')
 const commentInput = document.getElementById('commentInput')
 const commentAddBtn = document.getElementById('commentAddBtn')
 
+// Calligraphy gate elements
+const calligraphyGate = document.getElementById('calligraphyGate')
+const calligraphyEnterBtn = document.getElementById('calligraphyEnterBtn')
+
 // Editor modal elements
 const editorModal = document.getElementById('editorModal')
 const editorContainer = document.getElementById('editorContainer')
@@ -1003,17 +1007,36 @@ function initSearch(){
   })
 }
 
+function setActiveCategoryTab(category){
+  const tabs = document.querySelectorAll('.category-tab')
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.category === category))
+}
+
+function showCalligraphyGate(){
+  if(!calligraphyGate) return
+  calligraphyGate.classList.add('is-visible')
+  calligraphyGate.style.display = 'flex'
+  calligraphyGate.setAttribute('aria-hidden','false')
+}
+
+function hideCalligraphyGate(){
+  if(!calligraphyGate) return
+  calligraphyGate.classList.remove('is-visible')
+  calligraphyGate.setAttribute('aria-hidden','true')
+  calligraphyGate.style.display = 'none'
+}
+
 // Category tabs initialization
 function initCategoryTabs(){
   const tabs = document.querySelectorAll('.category-tab')
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      // Update active state
-      tabs.forEach(t => t.classList.remove('active'))
-      tab.classList.add('active')
-
-      // Update filter state
       const category = tab.dataset.category
+      setActiveCategoryTab(category)
+      if(category === 'Calligraphy'){
+        showCalligraphyGate()
+        return
+      }
       state.filter = category
       renderGrid()
     })
@@ -1075,6 +1098,30 @@ function initCategoryTabs(){
     })
   })
 }
+
+if(calligraphyEnterBtn){
+  calligraphyEnterBtn.addEventListener('click', ()=>{
+    setActiveCategoryTab('Calligraphy')
+    state.filter = 'Calligraphy'
+    renderGrid()
+    hideCalligraphyGate()
+  })
+}
+
+// Fallback: if preferred gate image 18.jpg is missing, fall back to an existing image
+document.addEventListener('DOMContentLoaded', ()=>{
+  const img = document.getElementById('calligraphyGateImage')
+  if(!img) return
+  img.addEventListener('error', ()=>{
+    // try several existing candidates
+    const fallbacks = ['./书法福/13.jpg','./书法福/14.jpg','./书法福/15.jpg','./书法福/16.jpg','./书法福/17.jpg']
+    for(const fb of fallbacks){
+      const test = new Image()
+      test.src = fb
+      test.onload = ()=>{ img.src = fb; img.onerror = null }
+    }
+  })
+})
 
 // Update Profile statistics
 function updateProfileStats(){

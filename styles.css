@@ -186,6 +186,123 @@ main{padding:12px}
 #installBtn{background:#fff;border-color:#e6eefc}
 #installBtn.show{display:inline-block}
 
+/* Calligraphy gate overlay */
+.calligraphy-gate{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1400;
+  padding:24px;
+}
+.calligraphy-gate.is-visible{display:flex;}
+.calligraphy-gate__backdrop{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(1200px 600px at 20% 10%, rgba(245,222,179,0.35), rgba(0,0,0,0.88));
+}
+.calligraphy-gate__panel{
+  position:relative;
+  max-width:1100px;
+  width:100%;
+  background:rgba(12,12,12,0.92);
+  color:#f7f0e5;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;
+  padding:28px 28px 24px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.45);
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  animation:gateFadeUp 320ms ease-out;
+}
+.calligraphy-gate__badge{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#f1d6a3,#d9a441);
+  color:#2b1b00;
+  font-weight:700;
+  letter-spacing:1px;
+  margin-bottom:10px;
+}
+.calligraphy-gate__panel h2{
+  margin:6px 0 10px;
+  font-size:30px;
+  font-family:'Zhi Mang Xing','Ma Shan Zheng',serif;
+  font-weight:400;
+}
+.calligraphy-gate__content{
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:16px;
+  align-items:stretch;
+  min-height:280px;
+}
+.calligraphy-gate__image{
+  width:100%;
+  max-width:320px;
+  max-height:320px;
+  height:auto;
+  border-radius:12px;
+  margin:0 auto;
+  border:1px solid rgba(255,255,255,0.08);
+  object-fit:contain;
+}
+.calligraphy-gate__text{
+  max-height:46vh;
+  overflow:auto;
+  padding:10px 12px;
+  background:rgba(255,255,255,0.04);
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.06);
+  text-align:left;
+  font-size:13px;
+  line-height:1.7;
+  color:rgba(247,240,229,0.88);
+}
+.calligraphy-gate__text p{margin:0 0 10px;}
+.calligraphy-gate__text p:first-child{font-weight:700;}
+.calligraphy-gate__desc{
+  margin:0;
+  color:rgba(247,240,229,0.8);
+  font-size:14px;
+  line-height:1.6;
+}
+.calligraphy-gate__enter{
+  align-self:center;
+  padding:10px 22px;
+  border:none;
+  background:linear-gradient(135deg,#f1d6a3,#d9a441);
+  color:#2b1b00;
+  font-weight:700;
+  border-radius:999px;
+}
+.calligraphy-gate__enter:hover{filter:brightness(1.05)}
+
+@media (max-width:900px){
+  .calligraphy-gate__panel{
+    max-width:680px;
+  }
+  .calligraphy-gate__content{
+    grid-template-columns:1fr;
+    min-height:auto;
+  }
+  .calligraphy-gate__image{
+    max-height:240px;
+  }
+  .calligraphy-gate__text{
+    max-height:34vh;
+  }
+}
+
+@keyframes gateFadeUp{
+  from{transform:translateY(12px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+
 /* Theme variables */
 :root{
 	--bg: #fafafa;
