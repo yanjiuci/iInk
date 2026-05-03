@@ -80,6 +80,11 @@ const commentAddBtn = document.getElementById('commentAddBtn')
 const calligraphyGate = document.getElementById('calligraphyGate')
 const calligraphyEnterBtn = document.getElementById('calligraphyEnterBtn')
 
+// Landing screen elements
+const landingScreen = document.getElementById('landingScreen')
+const enterSiteBtn = document.getElementById('enterSiteBtn')
+const LANDING_SEEN_KEY = 'landing_seen'
+
 // Editor modal elements
 const editorModal = document.getElementById('editorModal')
 const editorContainer = document.getElementById('editorContainer')
@@ -137,6 +142,21 @@ const flipV = document.getElementById('flipV')
 
 let currentEditor = null
 let currentItem = null
+
+function setLandingActive(active){
+  document.body.classList.toggle('landing-active', active)
+  if(landingScreen) landingScreen.setAttribute('aria-hidden', active ? 'false' : 'true')
+}
+
+function initLanding(){
+  if(!landingScreen || !enterSiteBtn) return
+  const seen = localStorage.getItem(LANDING_SEEN_KEY) === '1'
+  if(!seen) setLandingActive(true)
+  enterSiteBtn.addEventListener('click', ()=>{
+    setLandingActive(false)
+    localStorage.setItem(LANDING_SEEN_KEY, '1')
+  })
+}
 
 // Local persistence for user uploads
 const userStore = new LocalStorageManager('user')
@@ -996,6 +1016,7 @@ function syncControlsFromEditor(){
   initSearch()
   initCategoryTabs()
   updateProfileStats()
+  initLanding()
 })()
 
 // Search functionality initialization
