@@ -12,3 +12,10 @@ Thumbs.db
 
 # Node.js (如果有)
 node_modules/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
