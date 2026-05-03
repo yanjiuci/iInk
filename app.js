@@ -83,7 +83,6 @@ const calligraphyEnterBtn = document.getElementById('calligraphyEnterBtn')
 // Landing screen elements
 const landingScreen = document.getElementById('landingScreen')
 const enterSiteBtn = document.getElementById('enterSiteBtn')
-const LANDING_SEEN_KEY = 'landing_seen'
 
 // Editor modal elements
 const editorModal = document.getElementById('editorModal')
@@ -150,11 +149,9 @@ function setLandingActive(active){
 
 function initLanding(){
   if(!landingScreen || !enterSiteBtn) return
-  const seen = localStorage.getItem(LANDING_SEEN_KEY) === '1'
-  if(!seen) setLandingActive(true)
+  setLandingActive(true)
   enterSiteBtn.addEventListener('click', ()=>{
     setLandingActive(false)
-    localStorage.setItem(LANDING_SEEN_KEY, '1')
   })
 }
 
